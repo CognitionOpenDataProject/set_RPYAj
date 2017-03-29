@@ -20,7 +20,16 @@ output:
 ------
 
 #### Target outcomes: 
-[Insert the target outcomes identified in targetOutcomes.md]  
+
+For this article you should focus on the findings reported for Experiment 1 in section 4.2.2. Reaction times. Specifically, you should attempt to reproduce all descriptive and inferential analyses reported in the text below and associated tables/figures:
+
+> Corrected RTs more than two standard deviations from the overall mean were excluded from the analysis (3.4% of the data). A 2 × 2 repeated measures ANOVA with numbers direction (thumb-little finger, little finger-thumb) and hand posture (prone, supine) as within-subjects variables was carried out. A significant effect of numbers direction was found, F(1, 17) = 32.65, p < .001, η2p = .66, with faster RTs for the thumb-little finger mappings, i.e., mappings A and C (M = 508.5 ms, SD = 125), compared to little finger-thumb mappings, i.e., B and D (M = 563.2 ms, SD = 133.7) (see Fig. 2a). All the other effects were not significant.
+
+> Next, we further explored differences in terms of ordinal position of the digits to be mapped (see Fig. 3 for RTs results as a function of mapping and of Arabic digits). In particular, since we were interested in investigating how numbers were classified depending on their position in the sequence, we performed a one-way ANOVA with Arabic digits as within-subjects variable (One, Two, Three, Four, Five). Results showed a main effect of Arabic digits on RTs, F(4, 68) = 26.23, p < .001, η2p = .61. Post-Hoc comparisons (Scheffè) revealed that digit One (M = 440.34 ms, SD = 81.19) was classified significantly faster than Two (M = 548.16 ms, SD = 93.36; p < .001), Three (M = 576.85 ms, SD = 79.95; p < .001), Four (M = 584.45 ms, SD = 104.2; p < .001) and Five (M = 529.27 ms, SD = 77.73; p < .01). Furthermore, digits Two (p < .01) and Five (p < .05) were classified significantly faster than Four.
+
+**Note**
+Make sure to use the original article for additional context and information about any necessary pre-processing steps. Also check for additional supplementary materials that may provide supporting documentation for analysis procedures.
+
 
 ------
 
@@ -55,13 +64,49 @@ df.baseline <- read_tsv("data/baseline-data.txt")
 
 ```{r}
 df.baseline <- df.baseline %>%
-  rename(Posture = `Hand Posture`)
+  rename(Posture = `Hand Posture`) %>%
+  mutate(Posture = factor(Posture, levels = c("Up", "Down"), labels = c("Supine", "Prone")))
 ```
 
 
 Data is already in tidy format.
 
 ## Step 4: Run analysis
+
+
+
+> Motor baseline task
+> A preliminary analysis was carried out to check possible differ- ences in the motor baseline task. The overall error rate was 2.6% for the prone posture and 2.3% for the supine posture. A 2x5 repeated measures analysis of variance (ANOVA) on the reaction times (RTs) of correct responses, with hand posture (prone, supine) and finger (thumb, index finger, middle finger, ring finger, little finger) as within-subjects variables was carried out. Results showed a main effect of finger, F(4, 68) = 14.17, p < .001, g2p = .47 (thumb: M = 430.67 ms, SD = 47.3; index finger: M = 414.3 ms, SD = 51.8; middle finger: M = 426.6 ms, SD = 55.6; ring finger: M = 448 ms, SD = 57; little finger: M = 424.5 ms, SD = 50.9). A main effect of hand posture was also found, F(1, 17) = 15.48, p < .002, g2p = .49, with faster RTs for the prone condition (prone posture: M = 414.3 ms, SD = 51; supine posture: M = 443.4 ms, SD = 51.7), while the interaction was not significant.
+
+```{r baseline.analyses}
+df.baseline %>%
+  group_by(Posture) %>%
+  summarise(errorRate = (1 - mean(Accuracy))) %>% 
+  kable()
+
+df.baseline.summary <- df.baseline %>%
+  filter(Accuracy == 1) %>%
+  group_by(Subject, Posture, Image) %>%
+  summarize(meanRT = mean(RT))
+
+
+rs.aov.baseline <- with(df.baseline.summary, 
+     aov(meanRT ~ Posture + Image + Error(Subject / (Posture + Image))))
+
+summary(rs.aov.baseline)
+
+# df.baseline %>%
+#   filter(Accuracy == 1) %>%
+#   group_by(Subject, Posture, Image) %>%
+#   summarize(meanRT = mean(RT)) %>%
+#   ungroup() %>%
+#   group_by(Image) %>%
+#   summarize(M = mean(meanRT),
+#             SD = sd(meanRT)) %>%
+#   kable()
+```
+
+
 
 ### Pre-processing
 
@@ -83,13 +128,14 @@ df.baseline.ave <- df.baseline %>%
 
 It's not clear to me if this is within Posture or not (i.e., fastest finger when hand is down? or just fastest finger overall?; I will assume the latter.)
 
-```{r}
+```{r finger.delta}
 finger.d <- df.baseline.ave %>%
   ungroup() %>%
   group_by(Subject) %>%
   mutate(fastest = min(aveRT)) %>%
   ungroup() %>%
-  mutate(fingerD = aveRT - fastest)
+  mutate(fingerD = aveRT - fastest) %>%
+  select(-aveRT, -fastest)
 ```
 
 
@@ -99,38 +145,97 @@ The baseline data is coded for posture (Up vs. Down) x image (i.e., finger).
 The experimental (raw) data is just coded for Mapping (i.e., "condition": A, B, C, D).
 According to Section 4.1.3 paragraph 2 (with help from Figure 2b), conditions A & B are Posture = "Down" (or "prone") and C & D are Posture = "Up" (or supine).
 
+In addition, we will later need the 1->5 vs. 5->1 mapping as a separate variable.
+1->5 was used in conditions A and D, and 5->1 in B and C.
+
 The variable CorrectResponse is shared between both data sets and is the same variable as Image (i.e., finger).
 
-
-```{r}
+```{r corrected.responses}
 conditionPostures <- data.frame(
   Mapping = c("A", "B", "C", "D"),
-  Posture = c("Down", "Down", "Up", "Up")
+  Posture = c("Down", "Down", "Up", "Up"),
+  Direction = c("1->5", "5->1", "5->1", "1->5")
 )
 
 df.expt.averages <- df.raw %>%
+  filter(Accuracy == 1) %>%
   group_by(Subject, Mapping, CorrectResponse) %>%
   summarize(aveRT = mean(RT))
 
-df.corrected <- left_join(df.expt.averages, left_join(finger.d, conditionPostures))
-
-df.corrected <- df.experimental %>%
-  group_by(Subject, Mapping, )
+df.corrected <- left_join(df.expt.averages, left_join(finger.d, conditionPostures)) %>%
+  mutate(correctedRT = aveRT - fingerD)
 ```
 
 
-> A further correction was applied to avoid confounding effects of hand posture. Due to the faster performance in the prone posture, for each participant the average RT of each finger in the prone posture was subtracted from its average RT in the supine posture (i.e., posture D). The posture D was then subtracted from the aver- age RT of each finger in each experimental mapping of the supine posture, resulting in a corrected supine finger RT. Only RTs of cor- rect responses were analyzed in the experimental sessions and we separately performed an analysis of errors.
+> A further correction was applied to avoid confounding effects of hand posture. Due to the faster performance in the prone posture, for each participant the average RT of each finger in the prone posture was subtracted from its average RT in the supine posture (i.e., posture D). 
+
+I assume we are still talking about the baseline data set.
+
+```{r posture.delta}
+posture.d <- df.baseline.ave %>%
+  ungroup() %>%
+  spread(Posture, aveRT) %>%
+  mutate(postureD = Up - Down)
+
+#qplot(data = posture.d, x = postureD, geom = 'histogram')
+# sanity check: should be mostly greater than 0
+```
 
 
+> The posture D was then subtracted from the average RT of each finger in each experimental mapping of the supine posture, resulting in a corrected supine finger RT. Only RTs of correct responses were analyzed in the experimental sessions and we separately performed an analysis of errors.
+
+I assume we are applying this to the already corrected RTs.
+We are subtracting `postureD` from the (already fingerD-corrected) RTs for the supine (Up) posture only.
+My approach here is to take the `postureD` colun in `posture.d` and label those as "Up" for posture. 
+I'll then bind rows corresponding to the "Down" posture with `postureD = 0`, so no correction will be applied to the "down" or prone posture.
+
+```{r}
+df.corrected2 <- left_join(
+  df.corrected,
+  bind_rows(
+    posture.d %>%
+      select(Subject, Image, CorrectResponse, postureD) %>%
+      mutate(Posture = "Up"),
+    posture.d %>%
+      select(Subject, Image, CorrectResponse) %>%
+      mutate(Posture = "Down", postureD = 0)
+  )
+) %>% 
+  mutate(postureCorrectedRT = correctedRT - postureD)
+```
 
 ### Descriptive statistics
 
+> Corrected RTs more than two standard deviations from the overall mean were excluded from the analysis (3.4% of the data). (Section 4.2.2)
+
 ```{r}
+globalMean <- mean(df.corrected2$postureCorrectedRT)
+globalSD <- sd(df.corrected2$postureCorrectedRT)
+
+df.corrected2 <- df.corrected2 %>%
+  mutate(outlier = ( (postureCorrectedRT > globalMean + 2*globalSD) || 
+                       (postureCorrectedRT < globalMean - 2*globalSD) ))
+
 ```
+
+The authors reported 3.4% of the data fell beyond 2 standard deviations of the mean.
+The number I get is `r mean(df.corrected2$outlier)`
 
 ### Inferential statistics
 
+> A 2 × 2 repeated measures ANOVA with numbers direction (thumb-little finger, little finger-thumb) and hand posture (prone, supine) as within-subjects variables was carried out. A significant effect of numbers direction was found, F(1, 17) = 32.65, p < .001, η2p = .66, with faster RTs for the thumb-little finger mappings, i.e., mappings A and C (M = 508.5 ms, SD = 125), compared to little finger-thumb mappings, i.e., B and D (M = 563.2 ms, SD = 133.7) (see Fig. 2a). All the other effects were not significant.
+
+
 ```{r}
+df.corrected2.filtered <- df.corrected2 %>% filter(!outlier)
+
+rs.aov <- with(df.corrected2.filtered, 
+     aov(postureCorrectedRT ~ Posture * Direction + Error(Subject / (Posture * Direction))))
+
+summary(rs.aov)
+```
+```{r}
+df.c <- read_tsv("data/corrected-data.txt")
 ```
 
 ## Step 5: Conclusion
