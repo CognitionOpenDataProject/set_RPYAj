@@ -1,0 +1,147 @@
+---
+title: "COD Reproducibility Report"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+#### Article ID: RPYAj
+#### Pilot: Michael Henry Tessler
+#### Co-pilot: Tom Hardwicke  
+#### Start date: 03/28/17
+#### End date: [Insert end date - use US format]   
+
+-------
+
+#### Methods summary: 
+[Write a brief summary of the methods underlying the target outcomes written in your own words]
+
+------
+
+#### Target outcomes: 
+[Insert the target outcomes identified in targetOutcomes.md]  
+
+------
+
+[The chunk below sets up some formatting options for the R Markdown document]
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+## Step 1: Load packages
+
+[Some useful packages are being loaded below. You can add any additional ones you might need too.]
+
+```{r}
+library(tidyverse) # for data munging
+library(knitr) # for kable table formating
+library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
+library(readxl) # import excel files
+library(CODreports) # custom report functions
+```
+
+## Step 2: Load data
+
+```{r}
+df.raw <- read_tsv("data/raw-data.txt")
+df.baseline <- read_tsv("data/baseline-data.txt")
+```
+
+
+
+## Step 3: Tidy data
+
+```{r}
+df.baseline <- df.baseline %>%
+  rename(Posture = `Hand Posture`)
+```
+
+
+Data is already in tidy format.
+
+## Step 4: Run analysis
+
+### Pre-processing
+
+The following preprocessing was applied to the baseline data to then clean the raw data. (p.44, s.4.1.5)
+
+> To avoid any possible confounding motor effects, we first calculated for each participant the average RT of each finger in each posture. 
+
+```{r baseline.averages}
+df.baseline.ave <- df.baseline %>%
+  filter(Accuracy == 1) %>% # analysis only performed on correct responses
+  group_by(Subject, Posture, Image, CorrectResponse) %>%
+  summarize(aveRT = mean(RT)) 
+
+# ggplot(df.baseline.ave, aes( x = aveRT, fill = Posture))+
+#   geom_histogram(position = position_dodge())
+```
+
+> Then, the RT of the fastest finger was subtracted from the RT of each other finger, obtaining an index of each finger relative speed (i.e., finger D). 
+
+It's not clear to me if this is within Posture or not (i.e., fastest finger when hand is down? or just fastest finger overall?; I will assume the latter.)
+
+```{r}
+finger.d <- df.baseline.ave %>%
+  ungroup() %>%
+  group_by(Subject) %>%
+  mutate(fastest = min(aveRT)) %>%
+  ungroup() %>%
+  mutate(fingerD = aveRT - fastest)
+```
+
+
+> The finger D was then subtracted from the average RT of each finger in each experimental mapping, resulting in a corrected finger RT. 
+
+The baseline data is coded for posture (Up vs. Down) x image (i.e., finger).
+The experimental (raw) data is just coded for Mapping (i.e., "condition": A, B, C, D).
+According to Section 4.1.3 paragraph 2 (with help from Figure 2b), conditions A & B are Posture = "Down" (or "prone") and C & D are Posture = "Up" (or supine).
+
+The variable CorrectResponse is shared between both data sets and is the same variable as Image (i.e., finger).
+
+
+```{r}
+conditionPostures <- data.frame(
+  Mapping = c("A", "B", "C", "D"),
+  Posture = c("Down", "Down", "Up", "Up")
+)
+
+df.expt.averages <- df.raw %>%
+  group_by(Subject, Mapping, CorrectResponse) %>%
+  summarize(aveRT = mean(RT))
+
+df.corrected <- left_join(df.expt.averages, left_join(finger.d, conditionPostures))
+
+df.corrected <- df.experimental %>%
+  group_by(Subject, Mapping, )
+```
+
+
+> A further correction was applied to avoid confounding effects of hand posture. Due to the faster performance in the prone posture, for each participant the average RT of each finger in the prone posture was subtracted from its average RT in the supine posture (i.e., posture D). The posture D was then subtracted from the aver- age RT of each finger in each experimental mapping of the supine posture, resulting in a corrected supine finger RT. Only RTs of cor- rect responses were analyzed in the experimental sessions and we separately performed an analysis of errors.
+
+
+
+### Descriptive statistics
+
+```{r}
+```
+
+### Inferential statistics
+
+```{r}
+```
+
+## Step 5: Conclusion
+
+```{r}
+```
+
+[Please also include a brief text summary describing your findings. If this reproducibility check was a failure, you should note any suggestions as to what you think the likely cause(s) might be.]
+
+[This function will output information about the package versions used in this report:]
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```
