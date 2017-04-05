@@ -55,7 +55,7 @@ library(CODreports) # custom report functions
 
 ```{r}
 df.raw <- read_tsv("data/raw-data.txt")
-df.baseline <- read_tsv("data/baseline-data.txt")
+df.baseline <- read_tsv("data/baseline-data.txt");
 ```
 
 
@@ -65,7 +65,9 @@ df.baseline <- read_tsv("data/baseline-data.txt")
 ```{r}
 df.baseline <- df.baseline %>%
   rename(Posture = `Hand Posture`) %>%
-  mutate(Posture = factor(Posture, levels = c("Up", "Down"), labels = c("Supine", "Prone")))
+  mutate(Posture = factor(Posture, levels = c("Up", "Down"), labels = c("Supine", "Prone")),
+         Image = factor(Image)
+)
 ```
 
 
@@ -78,32 +80,178 @@ Data is already in tidy format.
 > Motor baseline task
 > A preliminary analysis was carried out to check possible differ- ences in the motor baseline task. The overall error rate was 2.6% for the prone posture and 2.3% for the supine posture. A 2x5 repeated measures analysis of variance (ANOVA) on the reaction times (RTs) of correct responses, with hand posture (prone, supine) and finger (thumb, index finger, middle finger, ring finger, little finger) as within-subjects variables was carried out. Results showed a main effect of finger, F(4, 68) = 14.17, p < .001, g2p = .47 (thumb: M = 430.67 ms, SD = 47.3; index finger: M = 414.3 ms, SD = 51.8; middle finger: M = 426.6 ms, SD = 55.6; ring finger: M = 448 ms, SD = 57; little finger: M = 424.5 ms, SD = 50.9). A main effect of hand posture was also found, F(1, 17) = 15.48, p < .002, g2p = .49, with faster RTs for the prone condition (prone posture: M = 414.3 ms, SD = 51; supine posture: M = 443.4 ms, SD = 51.7), while the interaction was not significant.
 
-```{r baseline.analyses}
-df.baseline %>%
+```{r baseline.descriptives}
+
+baseline.decriptives <- list(
+  "Thumb" = list(m = 430.67, sd = 47.3),
+  "Index" = list(m = 414.3, sd = 51.8),
+  "Middle Finger" = list(m = 426.6, sd = 55.6),
+  "Ring Finger" = list(m = 448, sd = 57),
+  "Little Finger" = list(m = 424.5, sd = 50.9),
+  "Prone" = list(m = 414.3, sd = 51),
+  "Supine" = list(m = 443.4, sd = 51.7),
+  "Error" = list(Prone = 0.026, Supine = 0.023)
+)
+
+baseline.errorRates <- df.baseline %>%
   group_by(Posture) %>%
-  summarise(errorRate = (1 - mean(Accuracy))) %>% 
-  kable()
+  summarise(errorRate = (1 - mean(Accuracy))) %>%
+  ungroup() %>%
+  spread(Posture, errorRate)
+
+## compare obtained error rates
+compareValues(
+  reportedValue = baseline.decriptives$Error$Prone,
+  obtainedValue = round(baseline.errorRates$Prone, 3)
+)
+
+compareValues(
+  reportedValue = baseline.decriptives$Error$Supine,
+  obtainedValue = round(baseline.errorRates$Supine, 3)
+)
+
 
 df.baseline.summary <- df.baseline %>%
+  filter(Accuracy == 1) %>%
+  group_by(Subject, Posture, Image) %>%
+  summarize(meanRT = mean(RT)) %>%
+  ungroup() %>%
+  group_by(Image) %>%
+  summarize(M = mean(meanRT),
+            SD = sd(meanRT))
+
+## compare obtained means and sd for each finger
+
+compareValues(
+  reportedValue = baseline.decriptives$Thumb$m, 
+  obtainedValue = filter(df.baseline.summary, Image == "Thumb")$M
+  )
+
+compareValues(
+  reportedValue = baseline.decriptives$Thumb$sd, 
+  obtainedValue = filter(df.baseline.summary, Image == "Thumb")$SD
+  )
+
+compareValues(
+  reportedValue = baseline.decriptives$Index$m, 
+  obtainedValue = filter(df.baseline.summary, Image == "Index")$M
+  )
+
+compareValues(
+  reportedValue = baseline.decriptives$Index$sd, 
+  obtainedValue = filter(df.baseline.summary, Image == "Index")$SD
+  )
+
+compareValues(
+  reportedValue = baseline.decriptives$`Middle Finger`$m, 
+  obtainedValue = filter(df.baseline.summary, Image == "Middle Finger")$M
+  )
+
+compareValues(
+  reportedValue = baseline.decriptives$`Middle Finger`$sd, 
+  obtainedValue = filter(df.baseline.summary, Image == "Middle Finger")$SD
+  )
+
+compareValues(
+  reportedValue = baseline.decriptives$`Ring Finger`$m, 
+  obtainedValue = filter(df.baseline.summary, Image == "Ring Finger")$M
+  )
+
+compareValues(
+  reportedValue = baseline.decriptives$`Ring Finger`$sd, 
+  obtainedValue = filter(df.baseline.summary, Image == "Ring Finger")$SD
+  )
+
+
+compareValues(
+  reportedValue = baseline.decriptives$`Little Finger`$m, 
+  obtainedValue = filter(df.baseline.summary, Image == "Little Finger")$M
+  )
+
+compareValues(
+  reportedValue = baseline.decriptives$`Little Finger`$sd, 
+  obtainedValue = filter(df.baseline.summary, Image == "Little Finger")$SD
+  )
+
+df.baseline.summary.position <- df.baseline %>%
+  filter(Accuracy == 1) %>%
+  group_by(Subject, Posture, Image) %>%
+  summarize(meanRT = mean(RT)) %>%
+  ungroup() %>%
+  group_by(Posture) %>%
+  summarize(M = mean(meanRT),
+            SD = sd(meanRT))
+
+## compare obtained means and sd for each hand position
+
+compareValues(
+  reportedValue = baseline.decriptives$Prone$m, 
+  obtainedValue = filter(df.baseline.summary.position, Posture == "Prone")$M
+  )
+
+compareValues(
+  reportedValue = baseline.decriptives$Prone$sd, 
+  obtainedValue = filter(df.baseline.summary.position, Posture == "Prone")$SD
+  )
+
+compareValues(
+  reportedValue = baseline.decriptives$Supine$m, 
+  obtainedValue = filter(df.baseline.summary.position, Posture == "Supine")$M
+  )
+
+compareValues(
+  reportedValue = baseline.decriptives$Supine$sd, 
+  obtainedValue = filter(df.baseline.summary.position, Posture == "Supine")$SD
+  )
+```
+
+```{r}
+df.baseline.subject <- df.baseline %>%
   filter(Accuracy == 1) %>%
   group_by(Subject, Posture, Image) %>%
   summarize(meanRT = mean(RT))
 
 
-rs.aov.baseline <- with(df.baseline.summary, 
-     aov(meanRT ~ Posture + Image + Error(Subject / (Posture + Image))))
+baseline.inferentials <- list(
+  Posture = list (f = 15.48, p = 0.002),
+  Finger = list(f = 14.17, p = 0.001)
+)
 
-summary(rs.aov.baseline)
 
-# df.baseline %>%
-#   filter(Accuracy == 1) %>%
-#   group_by(Subject, Posture, Image) %>%
-#   summarize(meanRT = mean(RT)) %>%
-#   ungroup() %>%
-#   group_by(Image) %>%
-#   summarize(M = mean(meanRT),
-#             SD = sd(meanRT)) %>%
-#   kable()
+# ggplot(df.baseline.summary, aes(x = meanRT, fill = Posture))+
+#   #geom_histogram(position = position_dodge())
+#   geom_density(alpha = 0.5)
+
+
+rs.aov.baseline <-aov(meanRT ~ 
+                        Posture * Image + Error(Subject / (Posture * Image)), 
+  data = df.baseline.subject)
+
+rs.aov.baseline.summary <- summary(rs.aov.baseline)
+
+compareValues(
+  reportedValue = baseline.inferentials$Finger$f,
+  obtainedValue = rs.aov.baseline.summary$`Error: Within`[[1]]["Image","F value"]
+)
+
+compareValues(
+  reportedValue = baseline.inferentials$Finger$p,
+  obtainedValue = rs.aov.baseline.summary$`Error: Within`[[1]]["Image","Pr(>F)"],
+  isP = T
+)
+
+
+compareValues(
+  reportedValue = baseline.inferentials$Posture$f,
+  obtainedValue = rs.aov.baseline.summary$`Error: Within`[[1]]["Posture      ","F value"]
+)
+
+compareValues(
+  reportedValue = baseline.inferentials$Posture$p,
+  obtainedValue = rs.aov.baseline.summary$`Error: Within`[[1]]["Posture      ","Pr(>F)"],
+  isP = T
+)
+
 ```
 
 
