@@ -367,6 +367,8 @@ df.corrected2 <- left_join(
   mutate(postureCorrectedRT = correctedRT - postureD)
 ```
 
+### Main experimental results
+
 #### Descriptive statistics
 
 > Corrected RTs more than two standard deviations from the overall mean were excluded from the analysis (3.4% of the data). (Section 4.2.2)
@@ -429,7 +431,7 @@ compareValues(
 
 
 
-### Inferential statistics
+#### Inferential statistics
 
 > A 2 × 2 repeated measures ANOVA with numbers direction (thumb-little finger, little finger-thumb) and hand posture (prone, supine) as within-subjects variables was carried out. A significant effect of numbers direction was found, F(1, 17) = 32.65, p < .001, η2p = .66, with faster RTs for the thumb-little finger mappings, i.e., mappings A and C (M = 508.5 ms, SD = 125), compared to little finger-thumb mappings, i.e., B and D (M = 563.2 ms, SD = 133.7) (see Fig. 2a). All the other effects were not significant.
 
@@ -605,6 +607,15 @@ The likely causes could be:
 2. Incorrect implementation of a within-subjects 2x2 ANOVA: These are the first ANOVAs I've done, and I'm not 100% confident in my method.
 3. Incorrect implementation of the preprocessing pipeline: There was a complicated preprocessing algorithm, that I may have misintereprted.
 
+
+```{r}
+codReport(Report_Type = 'pilot',
+          Article_ID = 'RPYAj', 
+          Insufficient_Information_Errors = 0,
+          Decision_Errors = 4, 
+          Major_Numerical_Errors = 24, 
+          Minor_Numerical_Errors = 14)
+```
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()
