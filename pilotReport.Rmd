@@ -15,7 +15,16 @@ output:
 -------
 
 #### Methods summary: 
-[Write a brief summary of the methods underlying the target outcomes written in your own words]
+
+The target article task is a "finger-mapping" reaction time study. 
+
+In the baseline task, each finger (thumb to little finger) is in charge of pressing a unique button the keyboard.
+The hand can either be in a typical "prone" position or upside-down in a "supine" position (the keyboard was fastened to the participant's hand so that the fingers pressed the same buttons). 
+The baseline task serves to measure each finger's reaction time in each hand position (prone vs. supine).
+This information is then used to adjust the main experimental data.
+
+In the main experimental task, each participant performs each of four (4) blocks of trials. 
+The 4 blocks correspond to the 2 hand positions (prone vs. supine) crossed with 2 different mappings (thumb = 1 & little finger = 5; or thumb = 5 & little finger = 1).
 
 ------
 
@@ -49,6 +58,7 @@ library(knitr) # for kable table formating
 library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
 library(readxl) # import excel files
 library(CODreports) # custom report functions
+library(agricolae) # for posthoc Scheffe tests
 ```
 
 ## Step 2: Load data
@@ -75,10 +85,13 @@ Data is already in tidy format.
 
 ## Step 4: Run analysis
 
-
+### Baseline task
 
 > Motor baseline task
 > A preliminary analysis was carried out to check possible differ- ences in the motor baseline task. The overall error rate was 2.6% for the prone posture and 2.3% for the supine posture. A 2x5 repeated measures analysis of variance (ANOVA) on the reaction times (RTs) of correct responses, with hand posture (prone, supine) and finger (thumb, index finger, middle finger, ring finger, little finger) as within-subjects variables was carried out. Results showed a main effect of finger, F(4, 68) = 14.17, p < .001, g2p = .47 (thumb: M = 430.67 ms, SD = 47.3; index finger: M = 414.3 ms, SD = 51.8; middle finger: M = 426.6 ms, SD = 55.6; ring finger: M = 448 ms, SD = 57; little finger: M = 424.5 ms, SD = 50.9). A main effect of hand posture was also found, F(1, 17) = 15.48, p < .002, g2p = .49, with faster RTs for the prone condition (prone posture: M = 414.3 ms, SD = 51; supine posture: M = 443.4 ms, SD = 51.7), while the interaction was not significant.
+
+
+#### Descriptive statistics
 
 ```{r baseline.descriptives}
 
@@ -205,6 +218,8 @@ compareValues(
   )
 ```
 
+#### Inferential statistics
+
 ```{r}
 df.baseline.subject <- df.baseline %>%
   filter(Accuracy == 1) %>%
@@ -256,7 +271,7 @@ compareValues(
 
 
 
-### Pre-processing
+### Pre-processing of main task data
 
 The following preprocessing was applied to the baseline data to then clean the raw data. (p.44, s.4.1.5)
 
@@ -289,7 +304,7 @@ finger.d <- df.baseline.ave %>%
 
 > The finger D was then subtracted from the average RT of each finger in each experimental mapping, resulting in a corrected finger RT. 
 
-The baseline data is coded for posture (Up vs. Down) x image (i.e., finger).
+The baseline data is coded for posture (Supine vs. Prone) x image (i.e., finger).
 The experimental (raw) data is just coded for Mapping (i.e., "condition": A, B, C, D).
 According to Section 4.1.3 paragraph 2 (with help from Figure 2b), conditions A & B are Posture = "Down" (or "prone") and C & D are Posture = "Up" (or supine).
 
@@ -301,7 +316,7 @@ The variable CorrectResponse is shared between both data sets and is the same va
 ```{r corrected.responses}
 conditionPostures <- data.frame(
   Mapping = c("A", "B", "C", "D"),
-  Posture = c("Down", "Down", "Up", "Up"),
+  Posture = c("Prone", "Prone", "Supine", "Supine"),
   Direction = c("1->5", "5->1", "5->1", "1->5")
 )
 
@@ -323,7 +338,7 @@ I assume we are still talking about the baseline data set.
 posture.d <- df.baseline.ave %>%
   ungroup() %>%
   spread(Posture, aveRT) %>%
-  mutate(postureD = Up - Down)
+  mutate(postureD = Supine - Prone)
 
 #qplot(data = posture.d, x = postureD, geom = 'histogram')
 # sanity check: should be mostly greater than 0
@@ -343,16 +358,16 @@ df.corrected2 <- left_join(
   bind_rows(
     posture.d %>%
       select(Subject, Image, CorrectResponse, postureD) %>%
-      mutate(Posture = "Up"),
+      mutate(Posture = "Supine"),
     posture.d %>%
       select(Subject, Image, CorrectResponse) %>%
-      mutate(Posture = "Down", postureD = 0)
+      mutate(Posture = "Prone", postureD = 0)
   )
 ) %>% 
   mutate(postureCorrectedRT = correctedRT - postureD)
 ```
 
-### Descriptive statistics
+#### Descriptive statistics
 
 > Corrected RTs more than two standard deviations from the overall mean were excluded from the analysis (3.4% of the data). (Section 4.2.2)
 
@@ -364,10 +379,55 @@ df.corrected2 <- df.corrected2 %>%
   mutate(outlier = ( (postureCorrectedRT > globalMean + 2*globalSD) || 
                        (postureCorrectedRT < globalMean - 2*globalSD) ))
 
+df.corrected2.filtered <- df.corrected2 %>% filter(!outlier)
+
+reportedOutlierRate = 0.034
+
+compareValues(reportedValue = reportedOutlierRate, obtainedValue = mean(df.corrected2$outlier))
+
 ```
 
-The authors reported 3.4% of the data fell beyond 2 standard deviations of the mean.
-The number I get is `r mean(df.corrected2$outlier)`
+> A 2 × 2 repeated measures ANOVA with numbers direction (thumb-little finger, little finger-thumb) and hand posture (prone, supine) as within-subjects variables was carried out. A significant effect of numbers direction was found, F(1, 17) = 32.65, p < .001, η2p = .66, with faster RTs for the thumb-little finger mappings, i.e., mappings A and C (M = 508.5 ms, SD = 125), compared to little finger-thumb mappings, i.e., B and D (M = 563.2 ms, SD = 133.7) (see Fig. 2a). All the other effects were not significant.
+
+
+
+```{r}
+reported.descriptives <- list(
+  ac = list( m = 508.5, sd = 125),
+  bd = list( m = 563.2, sd = 133.7)
+)
+
+df.corrected2.filtered.summaries <- df.corrected2.filtered %>%
+  group_by(Direction) %>%
+  summarize( m = mean(postureCorrectedRT), 
+             sd = sqrt(var(postureD)))
+
+directionsConditions <- list(
+ "ac" =  "1->5","bd"="5->1"
+)
+
+compareValues(
+  reportedValue = reported.descriptives$ac$m,
+  obtainedValue = filter(df.corrected2.filtered.summaries, Direction == directionsConditions[["ac"]])$m
+)
+
+compareValues(
+  reportedValue = reported.descriptives$ac$sd,
+  obtainedValue = filter(df.corrected2.filtered.summaries, Direction == directionsConditions[["ac"]])$sd
+)
+
+compareValues(
+  reportedValue = reported.descriptives$bd$m,
+  obtainedValue = filter(df.corrected2.filtered.summaries, Direction == directionsConditions[["bd"]])$m
+)
+
+compareValues(
+  reportedValue = reported.descriptives$bd$sd,
+  obtainedValue = filter(df.corrected2.filtered.summaries, Direction == directionsConditions[["bd"]])$sd
+)
+```
+
+
 
 ### Inferential statistics
 
@@ -375,25 +435,176 @@ The number I get is `r mean(df.corrected2$outlier)`
 
 
 ```{r}
-df.corrected2.filtered <- df.corrected2 %>% filter(!outlier)
+reported.inferentials  <- list(
+  f = 32.65, p = 0.001
+)
+
 
 rs.aov <- with(df.corrected2.filtered, 
      aov(postureCorrectedRT ~ Posture * Direction + Error(Subject / (Posture * Direction))))
 
-summary(rs.aov)
+rs.aov.summary <- summary(rs.aov)
+
+compareValues(
+  reportedValue = reported.inferentials$f,
+  obtainedValue = rs.aov.summary$`Error: Within`[[1]]["Direction","F value"]
+)
+
+compareValues(
+  reportedValue = reported.inferentials$p,
+  obtainedValue = rs.aov.summary$`Error: Within`[[1]]["Direction","Pr(>F)"],
+  isP = T
+)
+```
+
+> Next, we further explored differences in terms of ordinal position of the digits to be mapped (see Fig. 3 for RTs results as a function of mapping and of Arabic digits). In particular, since we were interested in investigating how numbers were classified depending on their position in the sequence, we performed a one-way ANOVA with Arabic digits as within-subjects variable (One, Two, Three, Four, Five). Results showed a main effect of Arabic digits on RTs, F(4, 68) = 26.23, p < .001, η2p = .61. 
+
+Arabic digits are a function of both hand position and direction. 
+
+```{r}
+arabicDigitsAC = list(
+   "Thumb" = 1,
+   "Index" = 2,
+   "Middle Finger" = 3,
+   "Ring Finger" = 4,
+   "Little Finger" = 5
+)
+arabicDigitsBD = list(
+   "Thumb" = 5,
+   "Index" = 4,
+   "Middle Finger" = 3,
+   "Ring Finger" = 2,
+   "Little Finger" = 1
+)
+
+df.corrected2.filtered.digits <- bind_rows(
+  df.corrected2.filtered %>% 
+    filter(Mapping %in% c("A", "C")) %>%
+    rowwise() %>%
+    mutate(digit = arabicDigitsAC[[as.character(Image)]]),
+  df.corrected2.filtered %>% 
+    filter(Mapping %in% c("B", "D")) %>%
+    rowwise() %>%
+    mutate(digit = arabicDigitsBD[[as.character(Image)]])
+)
+      
+```
+
+
+```{r}
+reported.inferentials.position  <- list(
+  f = 26.23, p = 0.001
+)
+
+
+rs.aov.digits <- with(df.corrected2.filtered.digits, 
+     aov(postureCorrectedRT ~ digit))
+
+rs.aov.digits.summary <- summary(rs.aov.digits)
+
+
+compareValues(
+  reportedValue = reported.inferentials.position$f,
+  obtainedValue = rs.aov.digits.summary[[1]]["digit","F value"]
+)
+
+compareValues(
+  reportedValue = reported.inferentials.position$p,
+  obtainedValue = rs.aov.digits.summary[[1]]["digit","Pr(>F)"],
+  isP = T
+)
+```
+
+
+> Post-Hoc comparisons (Scheffè) revealed that digit One (M = 440.34 ms, SD = 81.19) was classified significantly faster than Two (M = 548.16 ms, SD = 93.36; p < .001), Three (M = 576.85 ms, SD = 79.95; p < .001), Four (M = 584.45 ms, SD = 104.2; p < .001) and Five (M = 529.27 ms, SD = 77.73; p < .01). Furthermore, digits Two (p < .01) and Five (p < .05) were classified significantly faster than Four.
+
+```{r}
+posthoc.descriptives = list(
+  "1" = list(m = 440.34, sd = 81.19),
+  "2" = list(m = 548.16, sd = 93.36),
+  "3" = list(m = 576.85, sd = 79.95),
+  "4" = list(m = 584.45, sd = 104.2),
+  "5" = list(m = 529.27, sd = 77.73)
+)
+
+df.corrected2.filtered.digits.summary <- df.corrected2.filtered.digits %>%
+  ungroup() %>%
+  group_by(digit) %>%
+  summarize( m = mean(postureCorrectedRT),
+             sd = sqrt(var(postureCorrectedRT)))
+
+## compare obtained means and sd for each digit
+
+compareValues(
+  reportedValue = posthoc.descriptives[["1"]]$m, 
+  obtainedValue = filter(df.corrected2.filtered.digits.summary, digit == 1)$m
+  )
+
+compareValues(
+  reportedValue = posthoc.descriptives[["1"]]$sd, 
+  obtainedValue = filter(df.corrected2.filtered.digits.summary, digit == 1)$sd
+  )
+
+compareValues(
+  reportedValue = posthoc.descriptives[["2"]]$m, 
+  obtainedValue = filter(df.corrected2.filtered.digits.summary, digit == 2)$m
+  )
+
+compareValues(
+  reportedValue = posthoc.descriptives[["2"]]$sd, 
+  obtainedValue = filter(df.corrected2.filtered.digits.summary, digit == 2)$sd
+  )
+
+compareValues(
+  reportedValue = posthoc.descriptives[["3"]]$m, 
+  obtainedValue = filter(df.corrected2.filtered.digits.summary, digit == 3)$m
+  )
+
+compareValues(
+  reportedValue = posthoc.descriptives[["3"]]$sd, 
+  obtainedValue = filter(df.corrected2.filtered.digits.summary, digit == 3)$sd
+  )
+
+compareValues(
+  reportedValue = posthoc.descriptives[["4"]]$m, 
+  obtainedValue = filter(df.corrected2.filtered.digits.summary, digit == 4)$m
+  )
+
+compareValues(
+  reportedValue = posthoc.descriptives[["4"]]$sd, 
+  obtainedValue = filter(df.corrected2.filtered.digits.summary, digit == 4)$sd
+  )
+
+
+compareValues(
+  reportedValue = posthoc.descriptives[["5"]]$m, 
+  obtainedValue = filter(df.corrected2.filtered.digits.summary, digit == 5)$m
+  )
+
+compareValues(
+  reportedValue = posthoc.descriptives[["5"]]$sd, 
+  obtainedValue = filter(df.corrected2.filtered.digits.summary, digit == 5)$sd
+  )
+
+
 ```
 ```{r}
-df.c <- read_tsv("data/corrected-data.txt")
+posthoc.tests <- scheffe.test(rs.aov.digits, "digit", group=TRUE, main="Adjusted reaction times \nDealt with different digits")
+posthoc.tests
 ```
+
+I'm not sure how to get p-values out of this, but seeing how the descriptive statistics are off, the inferentials will be off too.
+
 
 ## Step 5: Conclusion
 
-```{r}
-```
+This was a rather tricky analysis, which failed to reproduce all but the first descriptive statistics (the error rate). 
+The likely causes could be:
 
-[Please also include a brief text summary describing your findings. If this reproducibility check was a failure, you should note any suggestions as to what you think the likely cause(s) might be.]
+1. Misinterpretation of the data file: This is more of an issue for the experimental data `df.raw` and not the baseline data `df.baseline`, because the baseline data are inherenetly simpler.
+2. Incorrect implementation of a within-subjects 2x2 ANOVA: These are the first ANOVAs I've done, and I'm not 100% confident in my method.
+3. Incorrect implementation of the preprocessing pipeline: There was a complicated preprocessing algorithm, that I may have misintereprted.
 
-[This function will output information about the package versions used in this report:]
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()
