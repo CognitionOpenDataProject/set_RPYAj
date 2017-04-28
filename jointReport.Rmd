@@ -1,0 +1,239 @@
+---
+title: "COD Reproducibility Report"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+#### Article ID: RPYAj
+#### Pilot: Michael Henry Tessler
+#### Co-Pilot: Tom Hardwicke
+#### Start date: 03/28/17
+#### End date:
+
+-------
+
+#### Methods summary: 
+
+The target article task is a "finger-mapping" reaction time study. In the baseline task, each finger (thumb to little finger) is in charge of pressing a unique button on the keyboard. The hand can either be in a typical "prone" position or upside-down in a "supine" position (the keyboard was fastened to the participant's hand so that the fingers pressed the same buttons). The baseline task served to measure each finger's reaction time in each hand position (prone vs. supine). This information was then used to adjust the main experimental data.
+
+In the main experimental task, each participant performed each of four (4) blocks of trials.The 4 blocks corresponded to the 2 hand positions (prone vs. supine) crossed with 2 different mappings (thumb = 1 & little finger = 5; or thumb = 5 & little finger = 1).
+
+------
+
+#### Target outcomes: 
+
+For this article we will focus on the findings reported for Experiment 1 in section 4.2.2. Reaction times. Specifically, we will attempt to reproduce all descriptive and inferential analyses reported in the text below and associated tables/figures:
+
+> Corrected RTs more than two standard deviations from the overall mean were excluded from the analysis (3.4% of the data). A 2 × 2 repeated measures ANOVA with numbers direction (thumb-little finger, little finger-thumb) and hand posture (prone, supine) as within-subjects variables was carried out. A significant effect of numbers direction was found, F(1, 17) = 32.65, p < .001, η2p = .66, with faster RTs for the thumb-little finger mappings, i.e., mappings A and C (M = 508.5 ms, SD = 125), compared to little finger-thumb mappings, i.e., B and D (M = 563.2 ms, SD = 133.7) (see Fig. 2a). All the other effects were not significant.
+
+> Next, we further explored differences in terms of ordinal position of the digits to be mapped (see Fig. 3 for RTs results as a function of mapping and of Arabic digits). In particular, since we were interested in investigating how numbers were classified depending on their position in the sequence, we performed a one-way ANOVA with Arabic digits as within-subjects variable (One, Two, Three, Four, Five). Results showed a main effect of Arabic digits on RTs, F(4, 68) = 26.23, p < .001, η2p = .61. Post-Hoc comparisons (Scheffè) revealed that digit One (M = 440.34 ms, SD = 81.19) was classified significantly faster than Two (M = 548.16 ms, SD = 93.36; p < .001), Three (M = 576.85 ms, SD = 79.95; p < .001), Four (M = 584.45 ms, SD = 104.2; p < .001) and Five (M = 529.27 ms, SD = 77.73; p < .01). Furthermore, digits Two (p < .01) and Five (p < .05) were classified significantly faster than Four.
+
+------
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+## Step 1: Load packages
+
+Some useful packages are being loaded below.
+
+```{r}
+library(tidyverse) # for data munging
+library(knitr) # for kable table formating
+library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
+library(readxl) # import excel files
+library(CODreports) # custom report functions
+library(agricolae) # for posthoc Scheffe tests
+pull <- function(x,y) {x[,if(is.name(substitute(y))) deparse(substitute(y)) else y, drop = FALSE][[1]]} # custom function to extract vectors from dataframe columns
+```
+
+## Step 2: Load data
+
+```{r}
+df.raw <- read_tsv("data/raw-data.txt")
+df.baseline <- read_tsv("data/baseline-data.txt");
+df.corrected <- read_tsv("data/corrected-data.txt");
+```
+
+## Step 3: Tidy data
+
+Data is already in tidy format. Here we make some minor adjustments to the data format:
+
+```{r}
+df.baseline <- df.baseline %>%
+  rename(Posture = `Hand Posture`) %>%
+  mutate(Posture = factor(Posture, levels = c("Up", "Down"), labels = c("Supine", "Prone")),
+         Finger = factor(Image),
+         Subject = factor(Subject)
+)
+```
+
+Check we have 18 participants:
+```{r}
+length(unique(df.baseline$Subject))
+```
+
+Ok.
+
+## Step 4: Run analysis
+
+### Baseline task
+
+We first try to reproduce the analysis of the baseline task as we will need this data to make adjustments for the main experimental task.
+
+> Motor baseline task
+> A preliminary analysis was carried out to check possible differences in the motor baseline task. The overall error rate was 2.6% for the prone posture and 2.3% for the supine posture. 
+
+```{r}
+baseline.errorRates <- df.baseline %>%
+  group_by(Posture) %>%
+  summarise(errorRate = (1 - mean(Accuracy))) %>%
+  ungroup() %>%
+  spread(Posture, errorRate)
+
+## compare obtained error rates
+compareValues(
+  reportedValue = 0.026,
+  obtainedValue = round(baseline.errorRates$Prone, 3)
+)
+
+compareValues(
+  reportedValue = 0.023,
+  obtainedValue = round(baseline.errorRates$Supine, 3)
+)
+```
+
+Let's now try and reproduce the outcomes reported here:
+
+> A 2x5 repeated measures analysis of variance (ANOVA) on the reaction times (RTs) of correct responses, with hand posture (prone, supine) and finger (thumb, index finger, middle finger, ring finger, little finger) as within-subjects variables was carried out. Results showed a main effect of finger, F(4, 68) = 14.17, p < .001, g2p = .47 (thumb: M = 430.67 ms, SD = 47.3; index finger: M = 414.3 ms, SD = 51.8; middle finger: M = 426.6 ms, SD = 55.6; ring finger: M = 448 ms, SD = 57; little finger: M = 424.5 ms, SD = 50.9). A main effect of hand posture was also found, F(1, 17) = 15.48, p < .002, g2p = .49, with faster RTs for the prone condition (prone posture: M = 414.3 ms, SD = 51; supine posture: M = 443.4 ms, SD = 51.7), while the interaction was not significant.
+
+#### Descriptive statistics
+
+```{r}
+# create a participant level dataset
+participantLevel <- df.baseline %>%
+  filter(Accuracy == 1) %>% # select only correct responses
+  group_by(Subject, Posture, Finger) %>%
+  summarize(RT = mean(RT)) %>%
+  ungroup()
+```
+
+Calculate summary statistics for Finger condition:
+
+```{r}
+sumStats <- participantLevel %>%
+  group_by(Finger) %>%
+  summarise(M = mean(RT), SD = sd(RT))
+
+sumStats
+```
+
+Looks like there are a number of discrepancies here. Let's check them explicitly:
+
+```{r}
+# thumb: M = 430.67 ms, SD = 47.3
+m1 <- sumStats %>% filter(Finger == "Thumb") %>% pull(M)
+sd1 <- sumStats %>% filter(Finger == "Thumb") %>% pull(SD)
+compareValues(reportedValue = 430.67, obtainedValue = m1)
+compareValues(reportedValue = 47.3, obtainedValue = sd1)
+
+# index finger: M = 414.3 ms, SD = 51.8
+m2 <- sumStats %>% filter(Finger == "Index") %>% pull(M)
+sd2 <- sumStats %>% filter(Finger == "Index") %>% pull(SD)
+compareValues(reportedValue = 414.3, obtainedValue = m2)
+compareValues(reportedValue = 51.8, obtainedValue = sd2)
+
+# middle finger: M = 426.6 ms, SD = 55.6
+m3 <- sumStats %>% filter(Finger == "Middle Finger") %>% pull(M)
+sd3 <- sumStats %>% filter(Finger == "Middle Finger") %>% pull(SD)
+compareValues(reportedValue = 426.6, obtainedValue = m3)
+compareValues(reportedValue = 55.6, obtainedValue = sd3)
+
+# ring finger: M = 448 ms, SD = 57
+m4 <- sumStats %>% filter(Finger == "Ring Finger") %>% pull(M)
+sd4 <- sumStats %>% filter(Finger == "Ring Finger") %>% pull(SD)
+compareValues(reportedValue = 448, obtainedValue = m4)
+compareValues(reportedValue = 57, obtainedValue = sd4)
+
+# little finger: M = 424.5 ms, SD = 50.9
+m5 <- sumStats %>% filter(Finger == "Little Finger") %>% pull(M)
+sd5 <- sumStats %>% filter(Finger == "Little Finger") %>% pull(SD)
+compareValues(reportedValue = 424.5, obtainedValue = m5)
+compareValues(reportedValue = 50.9, obtainedValue = sd5)
+```
+
+There are a large number of discrepancies here and it is unclear why.
+
+```{r}
+# calculate summary statistics for posture
+sumStats <- participantLevel %>%
+  group_by(Posture) %>%
+  summarise(M = mean(RT), SD = sd(RT))
+
+sumStats
+```
+
+There are discrepancies here too. Let's compare the values explicitly:
+
+```{r}
+# prone posture: M = 414.3 ms, SD = 51
+m6 <- sumStats %>% filter(Posture == "Prone") %>% pull(M)
+sd6 <- sumStats %>% filter(Posture == "Prone") %>% pull(SD)
+compareValues(reportedValue = 414.3, obtainedValue = m6)
+compareValues(reportedValue = 51, obtainedValue = sd6)
+
+# supine posture: M = 443.4 ms, SD = 51.7
+m7 <- sumStats %>% filter(Posture == "Supine") %>% pull(M)
+sd7 <- sumStats %>% filter(Posture == "Supine") %>% pull(SD)
+compareValues(reportedValue = 443.4, obtainedValue = m7)
+compareValues(reportedValue = 51.7, obtainedValue = sd7)
+```
+
+There are discrepancies with these values too.
+
+#### Inferential statistics
+
+Let's have a look at the anova.
+
+> A 2x5 repeated measures analysis of variance (ANOVA) on the reaction times (RTs) of correct responses, with hand posture (prone, supine) and finger (thumb, index finger, middle finger, ring finger, little finger) as within-subjects variables was carried out. 
+
+```{r}
+# anova
+aov1 <- aov(RT ~ Posture*Finger + Error(Subject/(Posture*Finger)), data=participantLevel)
+
+# create output for SPSS to double check anova
+forSPSS <- participantLevel %>%
+  mutate(condition = paste(Posture, "_", Finger)) %>%
+  select(Subject, condition, RT) %>%
+  spread(condition, RT)
+```
+
+Let's compare the reported anova output:
+
+> Results showed a main effect of finger, F(4, 68) = 14.17, p < .001, g2p = .47 ...A main effect of hand posture was also found, F(1, 17) = 15.48, p < .002, g2p = .49...while the interaction was not significant.
+
+to the anova output we obtained:
+
+```{r}
+summary(aov1)
+```
+Many discrepancies here. Let's compare them explicitly:
+
+```{r}
+# a main effect of finger, F(4, 68) = 14.17, p < .001
+compareValues(reportedValue = 14.17, obtainedValue = 15.71) # f value
+# Degrees of freedom and p value look fine from eyeballing.
+
+# A main effect of hand posture was also found, F(1, 17) = 15.48, p < .002,
+compareValues(reportedValue = 15.48, obtainedValue = 12.72)
+# Degrees of freedom look fine from eyeballing. p-value is slightly off (p=.0024)
+```
+
+Reminder of analysis cannot proceed until we have resolved the issues with the baseline data.
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```

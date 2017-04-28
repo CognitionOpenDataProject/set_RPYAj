@@ -8,9 +8,8 @@ output:
 
 #### Article ID: RPYAj
 #### Pilot: Michael Henry Tessler
-#### Co-pilot: Tom Hardwicke  
 #### Start date: 03/28/17
-#### End date: [Insert end date - use US format]   
+#### End date: 04/07/17 
 
 -------
 
