@@ -30,6 +30,9 @@ For this article we will focus on the findings reported for Experiment 1 in sect
 
 > Next, we further explored differences in terms of ordinal position of the digits to be mapped (see Fig. 3 for RTs results as a function of mapping and of Arabic digits). In particular, since we were interested in investigating how numbers were classified depending on their position in the sequence, we performed a one-way ANOVA with Arabic digits as within-subjects variable (One, Two, Three, Four, Five). Results showed a main effect of Arabic digits on RTs, F(4, 68) = 26.23, p < .001, η2p = .61. Post-Hoc comparisons (Scheffè) revealed that digit One (M = 440.34 ms, SD = 81.19) was classified significantly faster than Two (M = 548.16 ms, SD = 93.36; p < .001), Three (M = 576.85 ms, SD = 79.95; p < .001), Four (M = 584.45 ms, SD = 104.2; p < .001) and Five (M = 529.27 ms, SD = 77.73; p < .01). Furthermore, digits Two (p < .01) and Five (p < .05) were classified significantly faster than Four.
 
+We are also going to try and reproduce the outcomes of the baseline task as these values are needed to make adjustments in the main analysis:
+
+> > A 2x5 repeated measures analysis of variance (ANOVA) on the reaction times (RTs) of correct responses, with hand posture (prone, supine) and finger (thumb, index finger, middle finger, ring finger, little finger) as within-subjects variables was carried out. Results showed a main effect of finger, F(4, 68) = 14.17, p < .001, g2p = .47 (thumb: M = 430.67 ms, SD = 47.3; index finger: M = 414.3 ms, SD = 51.8; middle finger: M = 426.6 ms, SD = 55.6; ring finger: M = 448 ms, SD = 57; little finger: M = 424.5 ms, SD = 50.9). A main effect of hand posture was also found, F(1, 17) = 15.48, p < .002, g2p = .49, with faster RTs for the prone condition (prone posture: M = 414.3 ms, SD = 51; supine posture: M = 443.4 ms, SD = 51.7), while the interaction was not significant.
 ------
 
 ```{r global_options, include=FALSE}
@@ -232,7 +235,18 @@ compareValues(reportedValue = 15.48, obtainedValue = 12.72)
 # Degrees of freedom look fine from eyeballing. p-value is slightly off (p=.0024)
 ```
 
-Reminder of analysis cannot proceed until we have resolved the issues with the baseline data.
+We have encountered a large number of problems reproducing the values reported for the baseline task. We contacted the authors about this, and they attempted to reproduce the values themselves. They said that they also could not reproduce the values for the baseline task. They were not sure why these problems occurred. However, a data file contain the RTS for the main analysis corrected for baseline was also shared with the article, and the authors say that they are confident these values are correct. Note that the authors cannot reproduce them using the baseline values, but say that the baseline values must be wrong and the RTs for the main analysis were corrected using the correct baseline values. We will therefore attempt to reproduce the main analysis using the corrected RTs data file rather than re-calculating these values from scractch using the baseline values as we had initially intended.
+
+### Main analysis
+
+#### Descriptive statistics
+
+We will now try and reproduce the following target outcomes:
+
+> Corrected RTs more than two standard deviations from the overall mean were excluded from the analysis (3.4% of the data). A 2 × 2 repeated measures ANOVA with numbers direction (thumb-little finger, little finger-thumb) and hand posture (prone, supine) as within-subjects variables was carried out. A significant effect of numbers direction was found, F(1, 17) = 32.65, p < .001, η2p = .66, with faster RTs for the thumb-little finger mappings, i.e., mappings A and C (M = 508.5 ms, SD = 125), compared to little finger-thumb mappings, i.e., B and D (M = 563.2 ms, SD = 133.7) (see Fig. 2a). All the other effects were not significant.
+
+> Next, we further explored differences in terms of ordinal position of the digits to be mapped (see Fig. 3 for RTs results as a function of mapping and of Arabic digits). In particular, since we were interested in investigating how numbers were classified depending on their position in the sequence, we performed a one-way ANOVA with Arabic digits as within-subjects variable (One, Two, Three, Four, Five). Results showed a main effect of Arabic digits on RTs, F(4, 68) = 26.23, p < .001, η2p = .61. Post-Hoc comparisons (Scheffè) revealed that digit One (M = 440.34 ms, SD = 81.19) was classified significantly faster than Two (M = 548.16 ms, SD = 93.36; p < .001), Three (M = 576.85 ms, SD = 79.95; p < .001), Four (M = 584.45 ms, SD = 104.2; p < .001) and Five (M = 529.27 ms, SD = 77.73; p < .01). Furthermore, digits Two (p < .01) and Five (p < .05) were classified significantly faster than Four.
+
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()

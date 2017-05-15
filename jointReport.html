@@ -301,12 +301,12 @@ compareValues(
   reportedValue = 0.026,
   obtainedValue = round(baseline.errorRates$Prone, 3)
 )</code></pre>
-<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (0.026) and the obtained value (0.027) differed by 3.85%&quot;</code></pre>
+<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (0.026) and the obtained value (0.027) differed by 3.85%. NB obtained value was rounded to 3 decimal places.&quot;</code></pre>
 <pre class="r"><code>compareValues(
   reportedValue = 0.023,
   obtainedValue = round(baseline.errorRates$Supine, 3)
 )</code></pre>
-<pre><code>## [1] &quot;MATCH. The reported value (0.023) and the obtained value (0.023) differed by 0%&quot;</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (0.023) and the obtained value (0.023) differed by 0%. NB obtained value was rounded to 3 decimal places.&quot;</code></pre>
 <p>Let’s now try and reproduce the outcomes reported here:</p>
 <blockquote>
 <p>A 2x5 repeated measures analysis of variance (ANOVA) on the reaction times (RTs) of correct responses, with hand posture (prone, supine) and finger (thumb, index finger, middle finger, ring finger, little finger) as within-subjects variables was carried out. Results showed a main effect of finger, F(4, 68) = 14.17, p &lt; .001, g2p = .47 (thumb: M = 430.67 ms, SD = 47.3; index finger: M = 414.3 ms, SD = 51.8; middle finger: M = 426.6 ms, SD = 55.6; ring finger: M = 448 ms, SD = 57; little finger: M = 424.5 ms, SD = 50.9). A main effect of hand posture was also found, F(1, 17) = 15.48, p &lt; .002, g2p = .49, with faster RTs for the prone condition (prone posture: M = 414.3 ms, SD = 51; supine posture: M = 443.4 ms, SD = 51.7), while the interaction was not significant.</p>
@@ -338,37 +338,37 @@ sumStats</code></pre>
 m1 &lt;- sumStats %&gt;% filter(Finger == &quot;Thumb&quot;) %&gt;% pull(M)
 sd1 &lt;- sumStats %&gt;% filter(Finger == &quot;Thumb&quot;) %&gt;% pull(SD)
 compareValues(reportedValue = 430.67, obtainedValue = m1)</code></pre>
-<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (430.67) and the obtained value (419.415740740741) differed by 2.61%&quot;</code></pre>
+<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (430.67) and the obtained value (419.42) differed by 2.61%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
 <pre class="r"><code>compareValues(reportedValue = 47.3, obtainedValue = sd1)</code></pre>
-<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (47.3) and the obtained value (63.8322335062117) differed by 34.95%&quot;</code></pre>
+<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (47.3) and the obtained value (63.8) differed by 34.88%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
 <pre class="r"><code># index finger: M = 414.3 ms, SD = 51.8
 m2 &lt;- sumStats %&gt;% filter(Finger == &quot;Index&quot;) %&gt;% pull(M)
 sd2 &lt;- sumStats %&gt;% filter(Finger == &quot;Index&quot;) %&gt;% pull(SD)
 compareValues(reportedValue = 414.3, obtainedValue = m2)</code></pre>
-<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (414.3) and the obtained value (404.38287037037) differed by 2.39%&quot;</code></pre>
+<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (414.3) and the obtained value (404.4) differed by 2.39%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
 <pre class="r"><code>compareValues(reportedValue = 51.8, obtainedValue = sd2)</code></pre>
-<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (51.8) and the obtained value (46.8838765681196) differed by 9.49%&quot;</code></pre>
+<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (51.8) and the obtained value (46.9) differed by 9.46%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
 <pre class="r"><code># middle finger: M = 426.6 ms, SD = 55.6
 m3 &lt;- sumStats %&gt;% filter(Finger == &quot;Middle Finger&quot;) %&gt;% pull(M)
 sd3 &lt;- sumStats %&gt;% filter(Finger == &quot;Middle Finger&quot;) %&gt;% pull(SD)
 compareValues(reportedValue = 426.6, obtainedValue = m3)</code></pre>
-<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (426.6) and the obtained value (448.483322310406) differed by 5.13%&quot;</code></pre>
+<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (426.6) and the obtained value (448.5) differed by 5.13%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
 <pre class="r"><code>compareValues(reportedValue = 55.6, obtainedValue = sd3)</code></pre>
-<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (55.6) and the obtained value (63.0885851579179) differed by 13.47%&quot;</code></pre>
+<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (55.6) and the obtained value (63.1) differed by 13.49%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
 <pre class="r"><code># ring finger: M = 448 ms, SD = 57
 m4 &lt;- sumStats %&gt;% filter(Finger == &quot;Ring Finger&quot;) %&gt;% pull(M)
 sd4 &lt;- sumStats %&gt;% filter(Finger == &quot;Ring Finger&quot;) %&gt;% pull(SD)
 compareValues(reportedValue = 448, obtainedValue = m4)</code></pre>
-<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (448) and the obtained value (502.149691358025) differed by 12.09%&quot;</code></pre>
+<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (448) and the obtained value (502) differed by 12.05%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
 <pre class="r"><code>compareValues(reportedValue = 57, obtainedValue = sd4)</code></pre>
-<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (57) and the obtained value (102.923535682724) differed by 80.57%&quot;</code></pre>
+<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (57) and the obtained value (103) differed by 80.7%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
 <pre class="r"><code># little finger: M = 424.5 ms, SD = 50.9
 m5 &lt;- sumStats %&gt;% filter(Finger == &quot;Little Finger&quot;) %&gt;% pull(M)
 sd5 &lt;- sumStats %&gt;% filter(Finger == &quot;Little Finger&quot;) %&gt;% pull(SD)
 compareValues(reportedValue = 424.5, obtainedValue = m5)</code></pre>
-<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (424.5) and the obtained value (426.462962962963) differed by 0.46%&quot;</code></pre>
+<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (424.5) and the obtained value (426.5) differed by 0.47%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
 <pre class="r"><code>compareValues(reportedValue = 50.9, obtainedValue = sd5)</code></pre>
-<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (50.9) and the obtained value (66.125969198713) differed by 29.91%&quot;</code></pre>
+<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (50.9) and the obtained value (66.1) differed by 29.86%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
 <p>There are a large number of discrepancies here and it is unclear why.</p>
 <pre class="r"><code># calculate summary statistics for posture
 sumStats &lt;- participantLevel %&gt;%
@@ -386,16 +386,16 @@ sumStats</code></pre>
 m6 &lt;- sumStats %&gt;% filter(Posture == &quot;Prone&quot;) %&gt;% pull(M)
 sd6 &lt;- sumStats %&gt;% filter(Posture == &quot;Prone&quot;) %&gt;% pull(SD)
 compareValues(reportedValue = 414.3, obtainedValue = m6)</code></pre>
-<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (414.3) and the obtained value (419.609290123457) differed by 1.28%&quot;</code></pre>
+<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (414.3) and the obtained value (419.6) differed by 1.28%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
 <pre class="r"><code>compareValues(reportedValue = 51, obtainedValue = sd6)</code></pre>
-<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (51) and the obtained value (57.5589146501339) differed by 12.86%&quot;</code></pre>
+<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (51) and the obtained value (58) differed by 13.73%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
 <pre class="r"><code># supine posture: M = 443.4 ms, SD = 51.7
 m7 &lt;- sumStats %&gt;% filter(Posture == &quot;Supine&quot;) %&gt;% pull(M)
 sd7 &lt;- sumStats %&gt;% filter(Posture == &quot;Supine&quot;) %&gt;% pull(SD)
 compareValues(reportedValue = 443.4, obtainedValue = m7)</code></pre>
-<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (443.4) and the obtained value (460.748544973545) differed by 3.91%&quot;</code></pre>
+<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (443.4) and the obtained value (460.7) differed by 3.9%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
 <pre class="r"><code>compareValues(reportedValue = 51.7, obtainedValue = sd7)</code></pre>
-<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (51.7) and the obtained value (89.9933535524611) differed by 74.07%&quot;</code></pre>
+<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (51.7) and the obtained value (90) differed by 74.08%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
 <p>There are discrepancies with these values too.</p>
 </div>
 <div id="inferential-statistics" class="section level4">
@@ -446,12 +446,12 @@ forSPSS &lt;- participantLevel %&gt;%
 <p>Many discrepancies here. Let’s compare them explicitly:</p>
 <pre class="r"><code># a main effect of finger, F(4, 68) = 14.17, p &lt; .001
 compareValues(reportedValue = 14.17, obtainedValue = 15.71) # f value</code></pre>
-<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (14.17) and the obtained value (15.71) differed by 10.87%&quot;</code></pre>
+<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (14.17) and the obtained value (15.71) differed by 10.87%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
 <pre class="r"><code># Degrees of freedom and p value look fine from eyeballing.
 
 # A main effect of hand posture was also found, F(1, 17) = 15.48, p &lt; .002,
 compareValues(reportedValue = 15.48, obtainedValue = 12.72)</code></pre>
-<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (15.48) and the obtained value (12.72) differed by 17.83%&quot;</code></pre>
+<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (15.48) and the obtained value (12.72) differed by 17.83%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
 <pre class="r"><code># Degrees of freedom look fine from eyeballing. p-value is slightly off (p=.0024)</code></pre>
 <p>Reminder of analysis cannot proceed until we have resolved the issues with the baseline data.</p>
 <pre class="r"><code>devtools::session_info()</code></pre>
@@ -462,7 +462,7 @@ compareValues(reportedValue = 15.48, obtainedValue = 12.72)</code></pre>
 ##  language (EN)                        
 ##  collate  en_US.UTF-8                 
 ##  tz       America/Los_Angeles         
-##  date     2017-04-28                  
+##  date     2017-05-15                  
 ## 
 ##  package    * version  date      
 ##  agricolae  * 1.2-4    2016-06-12
@@ -471,9 +471,10 @@ compareValues(reportedValue = 15.48, obtainedValue = 12.72)</code></pre>
 ##  backports    1.0.5    2017-01-18
 ##  boot         1.3-18   2016-02-23
 ##  broom        0.4.2    2017-02-13
+##  cellranger   1.1.0    2016-07-27
 ##  cluster      2.0.5    2016-10-08
 ##  coda         0.19-1   2016-12-08
-##  CODreports * 0.1      2017-03-26
+##  CODreports * 0.1      2017-05-02
 ##  colorspace   1.3-2    2016-12-14
 ##  combinat     0.0-8    2012-10-29
 ##  DBI          0.5-1    2016-09-10
@@ -514,10 +515,10 @@ compareValues(reportedValue = 15.48, obtainedValue = 12.72)</code></pre>
 ##  purrr      * 0.2.2    2016-06-18
 ##  R6           2.2.0    2016-10-05
 ##  Rcpp         0.12.10  2017-03-19
-##  readr      * 1.0.0    2016-08-03
-##  readxl     * 0.1.1    2016-03-28
+##  readr      * 1.1.0    2017-03-22
+##  readxl     * 1.0.0    2017-04-18
 ##  reshape2     1.4.2    2016-10-22
-##  rmarkdown    1.4      2017-03-24
+##  rmarkdown    1.5      2017-04-26
 ##  rprojroot    1.2      2017-01-16
 ##  rvest        0.3.2    2016-06-17
 ##  scales       0.4.1    2016-11-09
@@ -525,7 +526,7 @@ compareValues(reportedValue = 15.48, obtainedValue = 12.72)</code></pre>
 ##  spdep        0.6-12   2017-04-06
 ##  stringi      1.1.2    2016-10-01
 ##  stringr      1.2.0    2017-02-18
-##  tibble     * 1.2      2016-08-26
+##  tibble     * 1.3.0    2017-04-01
 ##  tidyr      * 0.6.1    2017-01-10
 ##  tidyverse  * 1.1.1    2017-01-27
 ##  withr        1.0.2    2016-06-20
@@ -538,9 +539,10 @@ compareValues(reportedValue = 15.48, obtainedValue = 12.72)</code></pre>
 ##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.2)                                      
+##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.2)                                      
-##  Github (CognitionOpenDataProject/CODreports@b5f7566)
+##  Github (CognitionOpenDataProject/CODreports@2bbdb9d)
 ##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.0)                                      
@@ -581,8 +583,8 @@ compareValues(reportedValue = 15.48, obtainedValue = 12.72)</code></pre>
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.0)                                      
 ##  cran (@0.12.10)                                     
-##  CRAN (R 3.3.0)                                      
-##  CRAN (R 3.3.0)                                      
+##  CRAN (R 3.3.2)                                      
+##  cran (@1.0.0)                                       
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.2)                                      
@@ -592,7 +594,7 @@ compareValues(reportedValue = 15.48, obtainedValue = 12.72)</code></pre>
 ##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.0)                                      
 ##  cran (@1.2.0)                                       
-##  CRAN (R 3.3.0)                                      
+##  cran (@1.3.0)                                       
 ##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.0)                                      
@@ -627,7 +629,7 @@ $(document).ready(function () {
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
 </script>
