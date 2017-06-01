@@ -211,35 +211,6 @@ Arabic digits are a function of both hand position and direction.
 
 I believe the arabic digit information is already present in the corrected RT data file.
 
-# ```{r}
-# arabicDigitsAC = list(
-#    "Thumb" = 1,
-#    "Index" = 2,
-#    "Middle Finger" = 3,
-#    "Ring Finger" = 4,
-#    "Little Finger" = 5
-# )
-# arabicDigitsBD = list(
-#    "Thumb" = 5,
-#    "Index" = 4,
-#    "Middle Finger" = 3,
-#    "Ring Finger" = 2,
-#    "Little Finger" = 1
-# )
-# 
-# df.corrected2.filtered.digits <- bind_rows(
-#   df.tidy %>% 
-#     filter(Mapping %in% c("A", "C")) %>%
-#     rowwise() %>%
-#     mutate(digit = arabicDigitsAC[[as.character(Image)]]),
-#   df.tidy %>% 
-#     filter(Mapping %in% c("B", "D")) %>%
-#     rowwise() %>%
-#     mutate(digit = arabicDigitsBD[[as.character(Image)]])
-# )
-#       
-# ```
-
 ```{r}
 reported.inferentials.position  <- list(
   f = 26.23, p = 0.001
