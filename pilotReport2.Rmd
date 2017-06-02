@@ -324,14 +324,6 @@ One possible cause of my familiar is a misinterpretation of the data file. The d
 A second possible cause of the failure is an incorrect implementation of a within-subjects 2x2 ANOVA: These are the first ANOVAs I've done, and I'm not 100% confident in my method.
 
 
-```{r}
-codReport(Report_Type = 'pilot',
-          Article_ID = 'RPYAj', 
-          Insufficient_Information_Errors = 0,
-          Decision_Errors = 1, 
-          Major_Numerical_Errors = 10, 
-          Minor_Numerical_Errors = 9)
-```
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()

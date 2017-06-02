@@ -32,11 +32,13 @@ For this article we will focus on the findings reported for Experiment 1 in sect
 
 We are also going to try and reproduce the outcomes of the baseline task as these values are needed to make adjustments in the main analysis:
 
-> > A 2x5 repeated measures analysis of variance (ANOVA) on the reaction times (RTs) of correct responses, with hand posture (prone, supine) and finger (thumb, index finger, middle finger, ring finger, little finger) as within-subjects variables was carried out. Results showed a main effect of finger, F(4, 68) = 14.17, p < .001, g2p = .47 (thumb: M = 430.67 ms, SD = 47.3; index finger: M = 414.3 ms, SD = 51.8; middle finger: M = 426.6 ms, SD = 55.6; ring finger: M = 448 ms, SD = 57; little finger: M = 424.5 ms, SD = 50.9). A main effect of hand posture was also found, F(1, 17) = 15.48, p < .002, g2p = .49, with faster RTs for the prone condition (prone posture: M = 414.3 ms, SD = 51; supine posture: M = 443.4 ms, SD = 51.7), while the interaction was not significant.
+> A 2x5 repeated measures analysis of variance (ANOVA) on the reaction times (RTs) of correct responses, with hand posture (prone, supine) and finger (thumb, index finger, middle finger, ring finger, little finger) as within-subjects variables was carried out. Results showed a main effect of finger, F(4, 68) = 14.17, p < .001, g2p = .47 (thumb: M = 430.67 ms, SD = 47.3; index finger: M = 414.3 ms, SD = 51.8; middle finger: M = 426.6 ms, SD = 55.6; ring finger: M = 448 ms, SD = 57; little finger: M = 424.5 ms, SD = 50.9). A main effect of hand posture was also found, F(1, 17) = 15.48, p < .002, g2p = .49, with faster RTs for the prone condition (prone posture: M = 414.3 ms, SD = 51; supine posture: M = 443.4 ms, SD = 51.7), while the interaction was not significant.
+
 ------
 
 ```{r global_options, include=FALSE}
 knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
+options(scipen=999) # turn off scientific notation
 ```
 
 ## Step 1: Load packages
@@ -63,7 +65,7 @@ df.corrected <- read_tsv("data/corrected-data.txt");
 
 ## Step 3: Tidy data
 
-Data is already in tidy format. Here we make some minor adjustments to the data format:
+For baseline, data is already in tidy format. Here we make some minor adjustments to the data format:
 
 ```{r}
 df.baseline <- df.baseline %>%
@@ -80,6 +82,20 @@ length(unique(df.baseline$Subject))
 ```
 
 Ok.
+
+For corrected RTs, it appears that columns correspond to experimental conditions X finger number and values are in milliseconds (so 32510 is 325.10 ms)
+
+```{r}
+df.corrected <- df.corrected %>%
+  select(-X22) %>% # remove empty column
+  gather(condition, rt, -Subject) %>%
+  separate(condition, into = c("Mapping", "Number")) %>%
+  mutate(rt = rt / 100) %>%
+  mutate(Mapping = factor(Mapping),
+         Number = factor(Number),
+         Subject = factor(Subject))
+```
+
 
 ## Step 4: Run analysis
 
@@ -235,18 +251,218 @@ compareValues(reportedValue = 15.48, obtainedValue = 12.72)
 # Degrees of freedom look fine from eyeballing. p-value is slightly off (p=.0024)
 ```
 
-We have encountered a large number of problems reproducing the values reported for the baseline task. We contacted the authors about this, and they attempted to reproduce the values themselves. They said that they also could not reproduce the values for the baseline task. They were not sure why these problems occurred. However, a data file contain the RTS for the main analysis corrected for baseline was also shared with the article, and the authors say that they are confident these values are correct. Note that the authors cannot reproduce them using the baseline values, but say that the baseline values must be wrong and the RTs for the main analysis were corrected using the correct baseline values. We will therefore attempt to reproduce the main analysis using the corrected RTs data file rather than re-calculating these values from scractch using the baseline values as we had initially intended.
+We have encountered a large number of problems reproducing the values reported for the baseline task. We contacted the authors about this, and they attempted to reproduce the values themselves. They said that they also could not reproduce the values for the baseline task. They were not sure why these problems occurred. However, a data file contain the reaction times (RTs) for the main analysis corrected for baseline was also shared with the article, and the authors say that they are confident these values are correct. Note that the authors cannot reproduce them using the baseline values, but say that the baseline values must be wrong and the RTs for the main analysis were corrected using the correct baseline values. We will therefore attempt to reproduce the main analysis using the corrected RTs data file rather than re-calculating these values from scractch using the baseline values as we had initially intended.
 
 ### Main analysis
+
+#### Pre-processing
+
+> Corrected RTs more than two standard deviations from the overall mean were excluded from the analysis (3.4% of the data). (Section 4.2.2)
+
+```{r}
+globalMean <- mean(df.corrected$rt)
+globalSD <- sd(df.corrected$rt)
+
+df.corrected <- df.corrected %>% # identify any outliers
+  mutate(outlier = ( (rt > globalMean + 2*globalSD) || 
+                       (rt < globalMean - 2*globalSD) ))
+
+df.corrected.filtered <- df.corrected %>% filter(!outlier)
+
+reportedOutlierRate = 0.034
+
+mean(df.corrected$outlier)
+```
+
+It seems like the excluded RTs are already excluded from the published data set.
+
+The experimental data is just coded for Mapping (i.e., "condition": A, B, C, D). According to Section 4.1.3 paragraph 2 (with help from Figure 2b), conditions A & B are Posture = "Down" (or "prone") and C & D are Posture = "Up" (or supine).
+
+In addition, we will add 'direction', thumb-little and little-thumb as shown in Figure 2b.
+
+
+Thumb-little was used in conditions A and C, and little-thumb in B and D.
+
+```{r}
+conditionPostures <- data.frame(
+  Mapping = c("A", "B", "C", "D"),
+  Posture = c("Prone", "Prone", "Supine", "Supine"),
+  Direction = c("thumb-little", "little-thumb", "thumb-little", "little-thumb")
+)
+
+
+df.corrected <- left_join(df.corrected, conditionPostures)
+```
 
 #### Descriptive statistics
 
 We will now try and reproduce the following target outcomes:
 
-> Corrected RTs more than two standard deviations from the overall mean were excluded from the analysis (3.4% of the data). A 2 × 2 repeated measures ANOVA with numbers direction (thumb-little finger, little finger-thumb) and hand posture (prone, supine) as within-subjects variables was carried out. A significant effect of numbers direction was found, F(1, 17) = 32.65, p < .001, η2p = .66, with faster RTs for the thumb-little finger mappings, i.e., mappings A and C (M = 508.5 ms, SD = 125), compared to little finger-thumb mappings, i.e., B and D (M = 563.2 ms, SD = 133.7) (see Fig. 2a). All the other effects were not significant.
+> A 2 × 2 repeated measures ANOVA with numbers direction (thumb-little finger, little finger-thumb) and hand posture (prone, supine) as within-subjects variables was carried out. A significant effect of numbers direction was found, F(1, 17) = 32.65, p < .001, η2p = .66, with faster RTs for the thumb-little finger mappings, i.e., mappings A and C (M = 508.5 ms, SD = 125), compared to little finger-thumb mappings, i.e., B and D (M = 563.2 ms, SD = 133.7) (see Fig. 2a). All the other effects were not significant.
+
+We'll only look at the descriptive statistics now (inferentials are checked below).
+
+```{r}
+df.corrected.summary <- df.corrected %>%
+  group_by(Direction) %>%
+  summarize( m = mean(rt), 
+             sd = sd(rt))
+
+df.corrected.summary
+```
+
+Explictly compare:
+
+```{r}
+compareValues(
+  reportedValue = 508.5,
+  obtainedValue = filter(df.corrected.summary, Direction == "thumb-little")$m
+)
+
+compareValues(
+  reportedValue = 125,
+  obtainedValue = filter(df.corrected.summary, Direction == "thumb-little")$sd
+)
+
+compareValues(
+  reportedValue =  563.2,
+  obtainedValue = filter(df.corrected.summary, Direction == "little-thumb")$m
+)
+
+compareValues(
+  reportedValue = 133.7,
+  obtainedValue = filter(df.corrected.summary, Direction == "little-thumb")$sd
+)
+```
+
+We will now try and reproduce the following target outcomes:
 
 > Next, we further explored differences in terms of ordinal position of the digits to be mapped (see Fig. 3 for RTs results as a function of mapping and of Arabic digits). In particular, since we were interested in investigating how numbers were classified depending on their position in the sequence, we performed a one-way ANOVA with Arabic digits as within-subjects variable (One, Two, Three, Four, Five). Results showed a main effect of Arabic digits on RTs, F(4, 68) = 26.23, p < .001, η2p = .61. Post-Hoc comparisons (Scheffè) revealed that digit One (M = 440.34 ms, SD = 81.19) was classified significantly faster than Two (M = 548.16 ms, SD = 93.36; p < .001), Three (M = 576.85 ms, SD = 79.95; p < .001), Four (M = 584.45 ms, SD = 104.2; p < .001) and Five (M = 529.27 ms, SD = 77.73; p < .01). Furthermore, digits Two (p < .01) and Five (p < .05) were classified significantly faster than Four.
 
+We'll only look at the descriptive statistics now (inferentials are checked below).
+
+```{r}
+df.corrected.digits.summary <- df.corrected %>%
+  group_by(Subject, Number) %>% # first summarise at subject level
+  summarize(subRT = mean(rt)) %>%
+  group_by(Number) %>%
+  summarize( m = mean(subRT), 
+             sd = sd(subRT))
+
+df.corrected.digits.summary
+```
+
+Compare explictly:
+
+```{r}
+compareValues(
+  reportedValue = 440.34,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 1)$m
+)
+
+compareValues(
+  reportedValue = 81.19,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 1)$sd
+)
+
+compareValues(
+  reportedValue = 548.16,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 2)$m
+)
+
+compareValues(
+  reportedValue = 93.36,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 2)$sd
+)
+
+compareValues(
+  reportedValue = 576.85,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 3)$m
+)
+
+compareValues(
+  reportedValue = 79.95,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 3)$sd
+)
+
+compareValues(
+  reportedValue = 584.45,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 4)$m
+)
+
+compareValues(
+  reportedValue = 104.2,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 4)$sd
+)
+
+compareValues(
+  reportedValue = 529.27,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 5)$m
+)
+
+compareValues(
+  reportedValue = 77.73,
+  obtainedValue = filter(df.corrected.digits.summary, Number ==5)$sd
+)
+```
+
+All looks ok.
+
+#### Inferential statistics
+
+We will now try and reproduce the following target outcomes:
+
+> A 2 × 2 repeated measures ANOVA with numbers direction (thumb-little finger, little finger-thumb) and hand posture (prone, supine) as within-subjects variables was carried out. A significant effect of numbers direction was found, F(1, 17) = 32.65, p < .001, η2p = .66, with faster RTs for the thumb-little finger mappings, i.e., mappings A and C (M = 508.5 ms, SD = 125), compared to little finger-thumb mappings, i.e., B and D (M = 563.2 ms, SD = 133.7) (see Fig. 2a). All the other effects were not significant.
+
+We'll only look at the inferential statistics now (descritives are checked above).
+
+```{r}
+rs.aov <- aov(rt ~ Posture * Direction + Error(Subject / (Posture * Direction)), data = df.corrected)
+
+rs.aov.summary <- summary(rs.aov)
+
+compareValues( # compare F value
+  reportedValue = 32.65,
+  obtainedValue = rs.aov.summary$`Error: Subject:Direction`[[1]]["Direction","F value"]
+)
+
+# eyeball p value, is it below .001 as stated?
+rs.aov.summary$`Error: Subject:Direction`[[1]]["Direction","Pr(>F)"]
+```
+
+All looks fine.
+
+We will now try and reproduce the following target outcomes:
+
+> Next, we further explored differences in terms of ordinal position of the digits to be mapped (see Fig. 3 for RTs results as a function of mapping and of Arabic digits). In particular, since we were interested in investigating how numbers were classified depending on their position in the sequence, we performed a one-way ANOVA with Arabic digits as within-subjects variable (One, Two, Three, Four, Five). Results showed a main effect of Arabic digits on RTs, F(4, 68) = 26.23, p < .001, η2p = .61.
+
+```{r}
+rs.aov.digits <- aov(rt ~ Number + Error(Subject/Number), data=df.corrected)
+
+rs.aov.digits.summary <- summary(rs.aov.digits)
+
+compareValues( # compare F values
+  reportedValue = 26.23,
+  obtainedValue = rs.aov.digits.summary$`Error: Subject:Number`[[1]]["Number","F value"]
+)
+
+# eyeball p value, is it below .001 as stated?
+rs.aov.digits.summary$`Error: Subject:Number`[[1]]["Number","Pr(>F)"]
+```
+
+Looks fine.
+
+## Step 5: Conclusion
+
+```{r}
+codReport(Report_Type = 'joint',
+          Article_ID = 'RPYAj', 
+          Insufficient_Information_Errors = 0,
+          Decision_Errors = 0, 
+          Major_Numerical_Errors = 9, 
+          Minor_Numerical_Errors = 9,
+          Author_Assistance = T)
+```
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()

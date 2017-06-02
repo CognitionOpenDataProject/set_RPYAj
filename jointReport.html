@@ -249,6 +249,10 @@ div.tocify {
 <blockquote>
 <p>Next, we further explored differences in terms of ordinal position of the digits to be mapped (see Fig. 3 for RTs results as a function of mapping and of Arabic digits). In particular, since we were interested in investigating how numbers were classified depending on their position in the sequence, we performed a one-way ANOVA with Arabic digits as within-subjects variable (One, Two, Three, Four, Five). Results showed a main effect of Arabic digits on RTs, F(4, 68) = 26.23, p &lt; .001, η2p = .61. Post-Hoc comparisons (Scheffè) revealed that digit One (M = 440.34 ms, SD = 81.19) was classified significantly faster than Two (M = 548.16 ms, SD = 93.36; p &lt; .001), Three (M = 576.85 ms, SD = 79.95; p &lt; .001), Four (M = 584.45 ms, SD = 104.2; p &lt; .001) and Five (M = 529.27 ms, SD = 77.73; p &lt; .01). Furthermore, digits Two (p &lt; .01) and Five (p &lt; .05) were classified significantly faster than Four.</p>
 </blockquote>
+<p>We are also going to try and reproduce the outcomes of the baseline task as these values are needed to make adjustments in the main analysis:</p>
+<blockquote>
+<p>A 2x5 repeated measures analysis of variance (ANOVA) on the reaction times (RTs) of correct responses, with hand posture (prone, supine) and finger (thumb, index finger, middle finger, ring finger, little finger) as within-subjects variables was carried out. Results showed a main effect of finger, F(4, 68) = 14.17, p &lt; .001, g2p = .47 (thumb: M = 430.67 ms, SD = 47.3; index finger: M = 414.3 ms, SD = 51.8; middle finger: M = 426.6 ms, SD = 55.6; ring finger: M = 448 ms, SD = 57; little finger: M = 424.5 ms, SD = 50.9). A main effect of hand posture was also found, F(1, 17) = 15.48, p &lt; .002, g2p = .49, with faster RTs for the prone condition (prone posture: M = 414.3 ms, SD = 51; supine posture: M = 443.4 ms, SD = 51.7), while the interaction was not significant.</p>
+</blockquote>
 <hr />
 </div>
 <div id="step-1-load-packages" class="section level2">
@@ -270,7 +274,7 @@ df.corrected &lt;- read_tsv(&quot;data/corrected-data.txt&quot;);</code></pre>
 </div>
 <div id="step-3-tidy-data" class="section level2">
 <h2>Step 3: Tidy data</h2>
-<p>Data is already in tidy format. Here we make some minor adjustments to the data format:</p>
+<p>For baseline, data is already in tidy format. Here we make some minor adjustments to the data format:</p>
 <pre class="r"><code>df.baseline &lt;- df.baseline %&gt;%
   rename(Posture = `Hand Posture`) %&gt;%
   mutate(Posture = factor(Posture, levels = c(&quot;Up&quot;, &quot;Down&quot;), labels = c(&quot;Supine&quot;, &quot;Prone&quot;)),
@@ -281,6 +285,15 @@ df.corrected &lt;- read_tsv(&quot;data/corrected-data.txt&quot;);</code></pre>
 <pre class="r"><code>length(unique(df.baseline$Subject))</code></pre>
 <pre><code>## [1] 18</code></pre>
 <p>Ok.</p>
+<p>For corrected RTs, it appears that columns correspond to experimental conditions X finger number and values are in milliseconds (so 32510 is 325.10 ms)</p>
+<pre class="r"><code>df.corrected &lt;- df.corrected %&gt;%
+  select(-X22) %&gt;% # remove empty column
+  gather(condition, rt, -Subject) %&gt;%
+  separate(condition, into = c(&quot;Mapping&quot;, &quot;Number&quot;)) %&gt;%
+  mutate(rt = rt / 100) %&gt;%
+  mutate(Mapping = factor(Mapping),
+         Number = factor(Number),
+         Subject = factor(Subject))</code></pre>
 </div>
 <div id="step-4-run-analysis" class="section level2">
 <h2>Step 4: Run analysis</h2>
@@ -431,9 +444,9 @@ forSPSS &lt;- participantLevel %&gt;%
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
 ## Error: Subject:Finger
-##           Df Sum Sq Mean Sq F value   Pr(&gt;F)    
-## Finger     4 209158   52289   15.71 3.75e-09 ***
-## Residuals 68 226321    3328                     
+##           Df Sum Sq Mean Sq F value        Pr(&gt;F)    
+## Finger     4 209158   52289   15.71 0.00000000375 ***
+## Residuals 68 226321    3328                          
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
@@ -453,7 +466,224 @@ compareValues(reportedValue = 14.17, obtainedValue = 15.71) # f value</code></pr
 compareValues(reportedValue = 15.48, obtainedValue = 12.72)</code></pre>
 <pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (15.48) and the obtained value (12.72) differed by 17.83%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
 <pre class="r"><code># Degrees of freedom look fine from eyeballing. p-value is slightly off (p=.0024)</code></pre>
-<p>Reminder of analysis cannot proceed until we have resolved the issues with the baseline data.</p>
+<p>We have encountered a large number of problems reproducing the values reported for the baseline task. We contacted the authors about this, and they attempted to reproduce the values themselves. They said that they also could not reproduce the values for the baseline task. They were not sure why these problems occurred. However, a data file contain the reaction times (RTs) for the main analysis corrected for baseline was also shared with the article, and the authors say that they are confident these values are correct. Note that the authors cannot reproduce them using the baseline values, but say that the baseline values must be wrong and the RTs for the main analysis were corrected using the correct baseline values. We will therefore attempt to reproduce the main analysis using the corrected RTs data file rather than re-calculating these values from scractch using the baseline values as we had initially intended.</p>
+</div>
+</div>
+<div id="main-analysis" class="section level3">
+<h3>Main analysis</h3>
+<div id="pre-processing" class="section level4">
+<h4>Pre-processing</h4>
+<blockquote>
+<p>Corrected RTs more than two standard deviations from the overall mean were excluded from the analysis (3.4% of the data). (Section 4.2.2)</p>
+</blockquote>
+<pre class="r"><code>globalMean &lt;- mean(df.corrected$rt)
+globalSD &lt;- sd(df.corrected$rt)
+
+df.corrected &lt;- df.corrected %&gt;% # identify any outliers
+  mutate(outlier = ( (rt &gt; globalMean + 2*globalSD) || 
+                       (rt &lt; globalMean - 2*globalSD) ))
+
+df.corrected.filtered &lt;- df.corrected %&gt;% filter(!outlier)
+
+reportedOutlierRate = 0.034
+
+mean(df.corrected$outlier)</code></pre>
+<pre><code>## [1] 0</code></pre>
+<p>It seems like the excluded RTs are already excluded from the published data set.</p>
+<p>The experimental data is just coded for Mapping (i.e., “condition”: A, B, C, D). According to Section 4.1.3 paragraph 2 (with help from Figure 2b), conditions A &amp; B are Posture = “Down” (or “prone”) and C &amp; D are Posture = “Up” (or supine).</p>
+<p>In addition, we will add ‘direction’, thumb-little and little-thumb as shown in Figure 2b.</p>
+<p>Thumb-little was used in conditions A and C, and little-thumb in B and D.</p>
+<pre class="r"><code>conditionPostures &lt;- data.frame(
+  Mapping = c(&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;),
+  Posture = c(&quot;Prone&quot;, &quot;Prone&quot;, &quot;Supine&quot;, &quot;Supine&quot;),
+  Direction = c(&quot;thumb-little&quot;, &quot;little-thumb&quot;, &quot;thumb-little&quot;, &quot;little-thumb&quot;)
+)
+
+
+df.corrected &lt;- left_join(df.corrected, conditionPostures)</code></pre>
+</div>
+<div id="descriptive-statistics-1" class="section level4">
+<h4>Descriptive statistics</h4>
+<p>We will now try and reproduce the following target outcomes:</p>
+<blockquote>
+<p>A 2 × 2 repeated measures ANOVA with numbers direction (thumb-little finger, little finger-thumb) and hand posture (prone, supine) as within-subjects variables was carried out. A significant effect of numbers direction was found, F(1, 17) = 32.65, p &lt; .001, η2p = .66, with faster RTs for the thumb-little finger mappings, i.e., mappings A and C (M = 508.5 ms, SD = 125), compared to little finger-thumb mappings, i.e., B and D (M = 563.2 ms, SD = 133.7) (see Fig. 2a). All the other effects were not significant.</p>
+</blockquote>
+<p>We’ll only look at the descriptive statistics now (inferentials are checked below).</p>
+<pre class="r"><code>df.corrected.summary &lt;- df.corrected %&gt;%
+  group_by(Direction) %&gt;%
+  summarize( m = mean(rt), 
+             sd = sd(rt))
+
+df.corrected.summary</code></pre>
+<pre><code>## # A tibble: 2 × 3
+##      Direction        m       sd
+##         &lt;fctr&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+## 1 little-thumb 563.1686 133.6648
+## 2 thumb-little 508.4576 125.0085</code></pre>
+<p>Explictly compare:</p>
+<pre class="r"><code>compareValues(
+  reportedValue = 508.5,
+  obtainedValue = filter(df.corrected.summary, Direction == &quot;thumb-little&quot;)$m
+)</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (508.5) and the obtained value (508.5) differed by 0%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
+<pre class="r"><code>compareValues(
+  reportedValue = 125,
+  obtainedValue = filter(df.corrected.summary, Direction == &quot;thumb-little&quot;)$sd
+)</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (125) and the obtained value (125) differed by 0%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
+<pre class="r"><code>compareValues(
+  reportedValue =  563.2,
+  obtainedValue = filter(df.corrected.summary, Direction == &quot;little-thumb&quot;)$m
+)</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (563.2) and the obtained value (563.2) differed by 0%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
+<pre class="r"><code>compareValues(
+  reportedValue = 133.7,
+  obtainedValue = filter(df.corrected.summary, Direction == &quot;little-thumb&quot;)$sd
+)</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (133.7) and the obtained value (133.7) differed by 0%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
+<p>We will now try and reproduce the following target outcomes:</p>
+<blockquote>
+<p>Next, we further explored differences in terms of ordinal position of the digits to be mapped (see Fig. 3 for RTs results as a function of mapping and of Arabic digits). In particular, since we were interested in investigating how numbers were classified depending on their position in the sequence, we performed a one-way ANOVA with Arabic digits as within-subjects variable (One, Two, Three, Four, Five). Results showed a main effect of Arabic digits on RTs, F(4, 68) = 26.23, p &lt; .001, η2p = .61. Post-Hoc comparisons (Scheffè) revealed that digit One (M = 440.34 ms, SD = 81.19) was classified significantly faster than Two (M = 548.16 ms, SD = 93.36; p &lt; .001), Three (M = 576.85 ms, SD = 79.95; p &lt; .001), Four (M = 584.45 ms, SD = 104.2; p &lt; .001) and Five (M = 529.27 ms, SD = 77.73; p &lt; .01). Furthermore, digits Two (p &lt; .01) and Five (p &lt; .05) were classified significantly faster than Four.</p>
+</blockquote>
+<p>We’ll only look at the descriptive statistics now (inferentials are checked below).</p>
+<pre class="r"><code>df.corrected.digits.summary &lt;- df.corrected %&gt;%
+  group_by(Subject, Number) %&gt;% # first summarise at subject level
+  summarize(subRT = mean(rt)) %&gt;%
+  group_by(Number) %&gt;%
+  summarize( m = mean(subRT), 
+             sd = sd(subRT))
+
+df.corrected.digits.summary</code></pre>
+<pre><code>## # A tibble: 5 × 3
+##   Number        m        sd
+##   &lt;fctr&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+## 1      1 440.3406  81.19728
+## 2      2 548.1574  93.36100
+## 3      3 576.8507  79.94998
+## 4      4 584.4492 104.20240
+## 5      5 529.2676  77.73301</code></pre>
+<p>Compare explictly:</p>
+<pre class="r"><code>compareValues(
+  reportedValue = 440.34,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 1)$m
+)</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (440.34) and the obtained value (440.34) differed by 0%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
+<pre class="r"><code>compareValues(
+  reportedValue = 81.19,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 1)$sd
+)</code></pre>
+<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (81.19) and the obtained value (81.2) differed by 0.01%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
+<pre class="r"><code>compareValues(
+  reportedValue = 548.16,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 2)$m
+)</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (548.16) and the obtained value (548.16) differed by 0%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
+<pre class="r"><code>compareValues(
+  reportedValue = 93.36,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 2)$sd
+)</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (93.36) and the obtained value (93.36) differed by 0%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
+<pre class="r"><code>compareValues(
+  reportedValue = 576.85,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 3)$m
+)</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (576.85) and the obtained value (576.85) differed by 0%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
+<pre class="r"><code>compareValues(
+  reportedValue = 79.95,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 3)$sd
+)</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (79.95) and the obtained value (79.95) differed by 0%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
+<pre class="r"><code>compareValues(
+  reportedValue = 584.45,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 4)$m
+)</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (584.45) and the obtained value (584.45) differed by 0%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
+<pre class="r"><code>compareValues(
+  reportedValue = 104.2,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 4)$sd
+)</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (104.2) and the obtained value (104.2) differed by 0%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
+<pre class="r"><code>compareValues(
+  reportedValue = 529.27,
+  obtainedValue = filter(df.corrected.digits.summary, Number == 5)$m
+)</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (529.27) and the obtained value (529.27) differed by 0%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
+<pre class="r"><code>compareValues(
+  reportedValue = 77.73,
+  obtainedValue = filter(df.corrected.digits.summary, Number ==5)$sd
+)</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (77.73) and the obtained value (77.73) differed by 0%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
+<p>All looks ok.</p>
+</div>
+<div id="inferential-statistics-1" class="section level4">
+<h4>Inferential statistics</h4>
+<p>We will now try and reproduce the following target outcomes:</p>
+<blockquote>
+<p>A 2 × 2 repeated measures ANOVA with numbers direction (thumb-little finger, little finger-thumb) and hand posture (prone, supine) as within-subjects variables was carried out. A significant effect of numbers direction was found, F(1, 17) = 32.65, p &lt; .001, η2p = .66, with faster RTs for the thumb-little finger mappings, i.e., mappings A and C (M = 508.5 ms, SD = 125), compared to little finger-thumb mappings, i.e., B and D (M = 563.2 ms, SD = 133.7) (see Fig. 2a). All the other effects were not significant.</p>
+</blockquote>
+<p>We’ll only look at the inferential statistics now (descritives are checked above).</p>
+<pre class="r"><code>rs.aov &lt;- aov(rt ~ Posture * Direction + Error(Subject / (Posture * Direction)), data = df.corrected)
+
+rs.aov.summary &lt;- summary(rs.aov)
+
+compareValues( # compare F value
+  reportedValue = 32.65,
+  obtainedValue = rs.aov.summary$`Error: Subject:Direction`[[1]][&quot;Direction&quot;,&quot;F value&quot;]
+)</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (32.65) and the obtained value (32.65) differed by 0%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
+<pre class="r"><code># eyeball p value, is it below .001 as stated?
+rs.aov.summary$`Error: Subject:Direction`[[1]][&quot;Direction&quot;,&quot;Pr(&gt;F)&quot;]</code></pre>
+<pre><code>## [1] 0.00002534731</code></pre>
+<p>All looks fine.</p>
+<p>We will now try and reproduce the following target outcomes:</p>
+<blockquote>
+<p>Next, we further explored differences in terms of ordinal position of the digits to be mapped (see Fig. 3 for RTs results as a function of mapping and of Arabic digits). In particular, since we were interested in investigating how numbers were classified depending on their position in the sequence, we performed a one-way ANOVA with Arabic digits as within-subjects variable (One, Two, Three, Four, Five). Results showed a main effect of Arabic digits on RTs, F(4, 68) = 26.23, p &lt; .001, η2p = .61.</p>
+</blockquote>
+<pre class="r"><code>rs.aov.digits &lt;- aov(rt ~ Number + Error(Subject/Number), data=df.corrected)
+
+rs.aov.digits.summary &lt;- summary(rs.aov.digits)
+
+compareValues( # compare F values
+  reportedValue = 26.23,
+  obtainedValue = rs.aov.digits.summary$`Error: Subject:Number`[[1]][&quot;Number&quot;,&quot;F value&quot;]
+)</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (26.23) and the obtained value (26.23) differed by 0%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
+<pre class="r"><code># eyeball p value, is it below .001 as stated?
+rs.aov.digits.summary$`Error: Subject:Number`[[1]][&quot;Number&quot;,&quot;Pr(&gt;F)&quot;]</code></pre>
+<pre><code>## [1] 0.0000000000003573237</code></pre>
+<p>Looks fine.</p>
+</div>
+</div>
+</div>
+<div id="step-5-conclusion" class="section level2">
+<h2>Step 5: Conclusion</h2>
+<pre class="r"><code>codReport(Report_Type = 'joint',
+          Article_ID = 'RPYAj', 
+          Insufficient_Information_Errors = 0,
+          Decision_Errors = 0, 
+          Major_Numerical_Errors = 9, 
+          Minor_Numerical_Errors = 9,
+          Author_Assistance = T)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">Insufficient_Information_Errors</th>
+<th align="right">Decision_Errors</th>
+<th align="right">Major_Numerical_Errors</th>
+<th align="right">Minor_Numerical_Errors</th>
+<th align="left">Final_Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">9</td>
+<td align="right">9</td>
+<td align="left">Failure despite author assistance</td>
+</tr>
+</tbody>
+</table>
 <pre class="r"><code>devtools::session_info()</code></pre>
 <pre><code>##  setting  value                       
 ##  version  R version 3.3.2 (2016-10-31)
@@ -462,7 +692,7 @@ compareValues(reportedValue = 15.48, obtainedValue = 12.72)</code></pre>
 ##  language (EN)                        
 ##  collate  en_US.UTF-8                 
 ##  tz       America/Los_Angeles         
-##  date     2017-05-15                  
+##  date     2017-06-01                  
 ## 
 ##  package    * version  date      
 ##  agricolae  * 1.2-4    2016-06-12
@@ -492,6 +722,7 @@ compareValues(reportedValue = 15.48, obtainedValue = 12.72)</code></pre>
 ##  gtable       0.2.0    2016-02-26
 ##  gtools       3.5.0    2015-05-29
 ##  haven      * 1.0.0    2016-09-23
+##  highr        0.6      2016-05-09
 ##  hms          0.3      2016-11-22
 ##  htmltools    0.3.5    2016-03-21
 ##  httr         1.2.1    2016-07-03
@@ -560,6 +791,7 @@ compareValues(reportedValue = 15.48, obtainedValue = 12.72)</code></pre>
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.0)                                      
+##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.0)                                      
@@ -600,8 +832,6 @@ compareValues(reportedValue = 15.48, obtainedValue = 12.72)</code></pre>
 ##  CRAN (R 3.3.0)                                      
 ##  cran (@1.1.1)                                       
 ##  CRAN (R 3.3.2)</code></pre>
-</div>
-</div>
 </div>
 
 
