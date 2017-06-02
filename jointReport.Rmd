@@ -10,7 +10,7 @@ output:
 #### Pilot: Michael Henry Tessler
 #### Co-Pilot: Tom Hardwicke
 #### Start date: 03/28/17
-#### End date:
+#### End date: 06/01/17
 
 -------
 
