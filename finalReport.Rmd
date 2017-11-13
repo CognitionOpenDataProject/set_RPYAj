@@ -9,8 +9,10 @@ output:
 #### Article ID: RPYAj
 #### Pilot: Michael Henry Tessler
 #### Co-Pilot: Tom Hardwicke
-#### Start date: 03/28/17
-#### End date: 06/01/17
+#### Start date: Mar 28 2017
+#### End date: Jun 1 2017
+#### Final verification: Tom Hardwicke
+#### Date: Nov 12 2017
 
 -------
 
@@ -38,7 +40,9 @@ We are also going to try and reproduce the outcomes of the baseline task as thes
 
 ```{r global_options, include=FALSE}
 knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
-options(scipen=999) # turn off scientific notation
+
+# prepare an empty report object, we will update this each time we run compareValues2()
+reportObject <- data.frame("Article_ID" = NA, "valuesChecked" = 0, "eyeballs" = 0, "Total_df" = 0, "Total_p" = 0, "Total_mean" = 0, "Total_sd" = 0, "Total_se" = 0, "Total_ci" = 0, "Total_bf" = 0, "Total_t" = 0, "Total_F" = 0, "Total_es" = 0, "Total_median" = 0, "Total_irr" = 0, "Total_r" = 0, "Total_z" = 0, "Total_coeff" = 0, "Total_n" = 0, "Total_x2" = 0, "Total_other" = 0, "Insufficient_Information_Errors" = 0, "Decision_Errors" = 0, "Major_Numerical_Errors" = 0, "Minor_Numerical_Errors" = 0, "Major_df" = 0, "Major_p" = 0, "Major_mean" = 0, "Major_sd" = 0, "Major_se" = 0, "Major_ci" = 0, "Major_bf" = 0, "Major_t" = 0, "Major_F" = 0, "Major_es" = 0, "Major_median" = 0, "Major_irr" = 0, "Major_r" = 0, "Major_z" = 0, "Major_coeff" = 0, "Major_n" = 0, "Major_x2" = 0, "Major_other" = 0, "affectsConclusion" = NA, "error_typo" = 0, "error_specification" = 0, "error_analysis" = 0, "error_data" = 0, "error_unidentified" = 0, "Author_Assistance" = NA, "resolved_typo" = 0, "resolved_specification" = 0, "resolved_analysis" = 0, "resolved_data" = 0, "correctionSuggested" = NA, "correctionPublished" = NA)
 ```
 
 ## Step 1: Load packages
@@ -52,7 +56,7 @@ library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
 library(readxl) # import excel files
 library(CODreports) # custom report functions
 library(agricolae) # for posthoc Scheffe tests
-pull <- function(x,y) {x[,if(is.name(substitute(y))) deparse(substitute(y)) else y, drop = FALSE][[1]]} # custom function to extract vectors from dataframe columns
+library(afex) # for anova
 ```
 
 ## Step 2: Load data
@@ -114,22 +118,22 @@ baseline.errorRates <- df.baseline %>%
   spread(Posture, errorRate)
 
 ## compare obtained error rates
-compareValues(
-  reportedValue = 0.026,
-  obtainedValue = round(baseline.errorRates$Prone, 3)
-)
+reportObject <- compareValues2(
+  reportedValue = "0.026",
+  obtainedValue = baseline.errorRates$Prone,
+  valueType = 'mean')
 
-compareValues(
-  reportedValue = 0.023,
-  obtainedValue = round(baseline.errorRates$Supine, 3)
-)
+reportObject <- compareValues2(
+  reportedValue = "0.023",
+  obtainedValue = baseline.errorRates$Supine,
+  valueType = 'mean')
 ```
+
+#### Descriptive statistics
 
 Let's now try and reproduce the outcomes reported here:
 
 > A 2x5 repeated measures analysis of variance (ANOVA) on the reaction times (RTs) of correct responses, with hand posture (prone, supine) and finger (thumb, index finger, middle finger, ring finger, little finger) as within-subjects variables was carried out. Results showed a main effect of finger, F(4, 68) = 14.17, p < .001, g2p = .47 (thumb: M = 430.67 ms, SD = 47.3; index finger: M = 414.3 ms, SD = 51.8; middle finger: M = 426.6 ms, SD = 55.6; ring finger: M = 448 ms, SD = 57; little finger: M = 424.5 ms, SD = 50.9). A main effect of hand posture was also found, F(1, 17) = 15.48, p < .002, g2p = .49, with faster RTs for the prone condition (prone posture: M = 414.3 ms, SD = 51; supine posture: M = 443.4 ms, SD = 51.7), while the interaction was not significant.
-
-#### Descriptive statistics
 
 ```{r}
 # create a participant level dataset
@@ -156,32 +160,32 @@ Looks like there are a number of discrepancies here. Let's check them explicitly
 # thumb: M = 430.67 ms, SD = 47.3
 m1 <- sumStats %>% filter(Finger == "Thumb") %>% pull(M)
 sd1 <- sumStats %>% filter(Finger == "Thumb") %>% pull(SD)
-compareValues(reportedValue = 430.67, obtainedValue = m1)
-compareValues(reportedValue = 47.3, obtainedValue = sd1)
+reportObject <- compareValues2(reportedValue = "430.67", obtainedValue = m1, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "47.3", obtainedValue = sd1, valueType = 'sd')
 
 # index finger: M = 414.3 ms, SD = 51.8
 m2 <- sumStats %>% filter(Finger == "Index") %>% pull(M)
 sd2 <- sumStats %>% filter(Finger == "Index") %>% pull(SD)
-compareValues(reportedValue = 414.3, obtainedValue = m2)
-compareValues(reportedValue = 51.8, obtainedValue = sd2)
+reportObject <- compareValues2(reportedValue = "414.3", obtainedValue = m2, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "51.8", obtainedValue = sd2, valueType = 'sd')
 
 # middle finger: M = 426.6 ms, SD = 55.6
 m3 <- sumStats %>% filter(Finger == "Middle Finger") %>% pull(M)
 sd3 <- sumStats %>% filter(Finger == "Middle Finger") %>% pull(SD)
-compareValues(reportedValue = 426.6, obtainedValue = m3)
-compareValues(reportedValue = 55.6, obtainedValue = sd3)
+reportObject <- compareValues2(reportedValue = "426.6", obtainedValue = m3, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "55.6", obtainedValue = sd3, valueType = 'sd')
 
 # ring finger: M = 448 ms, SD = 57
 m4 <- sumStats %>% filter(Finger == "Ring Finger") %>% pull(M)
 sd4 <- sumStats %>% filter(Finger == "Ring Finger") %>% pull(SD)
-compareValues(reportedValue = 448, obtainedValue = m4)
-compareValues(reportedValue = 57, obtainedValue = sd4)
+reportObject <- compareValues2(reportedValue = "448", obtainedValue = m4, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "57", obtainedValue = sd4, valueType = 'sd')
 
 # little finger: M = 424.5 ms, SD = 50.9
 m5 <- sumStats %>% filter(Finger == "Little Finger") %>% pull(M)
 sd5 <- sumStats %>% filter(Finger == "Little Finger") %>% pull(SD)
-compareValues(reportedValue = 424.5, obtainedValue = m5)
-compareValues(reportedValue = 50.9, obtainedValue = sd5)
+reportObject <- compareValues2(reportedValue = "424.5", obtainedValue = m5, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "50.9", obtainedValue = sd5, valueType = 'sd')
 ```
 
 There are a large number of discrepancies here and it is unclear why.
@@ -201,14 +205,14 @@ There are discrepancies here too. Let's compare the values explicitly:
 # prone posture: M = 414.3 ms, SD = 51
 m6 <- sumStats %>% filter(Posture == "Prone") %>% pull(M)
 sd6 <- sumStats %>% filter(Posture == "Prone") %>% pull(SD)
-compareValues(reportedValue = 414.3, obtainedValue = m6)
-compareValues(reportedValue = 51, obtainedValue = sd6)
+reportObject <- compareValues2(reportedValue = "414.3", obtainedValue = m6, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "51", obtainedValue = sd6, valueType = 'sd')
 
 # supine posture: M = 443.4 ms, SD = 51.7
 m7 <- sumStats %>% filter(Posture == "Supine") %>% pull(M)
 sd7 <- sumStats %>% filter(Posture == "Supine") %>% pull(SD)
-compareValues(reportedValue = 443.4, obtainedValue = m7)
-compareValues(reportedValue = 51.7, obtainedValue = sd7)
+reportObject <- compareValues2(reportedValue = "443.4", obtainedValue = m7, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "51.7", obtainedValue = sd7, valueType = 'sd')
 ```
 
 There are discrepancies with these values too.
@@ -239,19 +243,24 @@ to the anova output we obtained:
 ```{r}
 summary(aov1)
 ```
+
 Many discrepancies here. Let's compare them explicitly:
 
 ```{r}
 # a main effect of finger, F(4, 68) = 14.17, p < .001
-compareValues(reportedValue = 14.17, obtainedValue = 15.71) # f value
-# Degrees of freedom and p value look fine from eyeballing.
+reportObject <- compareValues2(reportedValue = "4", obtainedValue = 4, valueType = 'df') # df value
+reportObject <- compareValues2(reportedValue = "68", obtainedValue = 68, valueType = 'df') # df value
+reportObject <- compareValues2(reportedValue = "14.17", obtainedValue = 15.71, valueType = 'F') # f value
+reportObject <- compareValues2(reportedValue = "eyeballMATCH", obtainedValue = 0.00000000375, valueType = 'p') # p value
 
 # A main effect of hand posture was also found, F(1, 17) = 15.48, p < .002,
-compareValues(reportedValue = 15.48, obtainedValue = 12.72)
-# Degrees of freedom look fine from eyeballing. p-value is slightly off (p=.0024)
+reportObject <- compareValues2(reportedValue = "1", obtainedValue = 1, valueType = 'df') # df value
+reportObject <- compareValues2(reportedValue = "17", obtainedValue = 17, valueType = 'df') # df value
+reportObject <- compareValues2(reportedValue = "15.48", obtainedValue = 12.72, valueType = 'F')
+reportObject <- compareValues2(reportedValue = "eyeballMATCH", obtainedValue = 0.00238, valueType = 'p') # p value
 ```
 
-We have encountered a large number of problems reproducing the values reported for the baseline task. We contacted the authors about this, and they attempted to reproduce the values themselves. They said that they also could not reproduce the values for the baseline task. They were not sure why these problems occurred. However, a data file contain the reaction times (RTs) for the main analysis corrected for baseline was also shared with the article, and the authors say that they are confident these values are correct. Note that the authors cannot reproduce them using the baseline values, but say that the baseline values must be wrong and the RTs for the main analysis were corrected using the correct baseline values. We will therefore attempt to reproduce the main analysis using the corrected RTs data file rather than re-calculating these values from scractch using the baseline values as we had initially intended.
+We have encountered a large number of problems reproducing the values reported for the baseline task. We contacted the authors about this, and they attempted to reproduce the values themselves. They said that they also could not reproduce the values for the baseline task. They were not sure why these problems occurred. However, a data file containing the reaction times (RTs) for the main analysis corrected for baseline was also shared with the article, and the authors say that they are confident these values are correct. Note that the authors cannot reproduce them using the baseline values, but say that the baseline values must be wrong and the RTs for the main analysis were corrected using the correct baseline values. We will therefore attempt to reproduce the main analysis using the corrected RTs data file rather than re-calculating these values from scratch using the baseline values as we had initially intended.
 
 ### Main analysis
 
@@ -314,24 +323,28 @@ df.corrected.summary
 Explictly compare:
 
 ```{r}
-compareValues(
-  reportedValue = 508.5,
-  obtainedValue = filter(df.corrected.summary, Direction == "thumb-little")$m
+reportObject <- compareValues2(
+  reportedValue = "508.5",
+  obtainedValue = filter(df.corrected.summary, Direction == "thumb-little")$m,
+  valueType = 'mean'
 )
 
-compareValues(
-  reportedValue = 125,
-  obtainedValue = filter(df.corrected.summary, Direction == "thumb-little")$sd
+reportObject <- compareValues2(
+  reportedValue = "125",
+  obtainedValue = filter(df.corrected.summary, Direction == "thumb-little")$sd,
+  valueType = 'sd'
 )
 
-compareValues(
-  reportedValue =  563.2,
-  obtainedValue = filter(df.corrected.summary, Direction == "little-thumb")$m
+reportObject <- compareValues2(
+  reportedValue =  "563.2",
+  obtainedValue = filter(df.corrected.summary, Direction == "little-thumb")$m,
+  valueType = 'mean'
 )
 
-compareValues(
-  reportedValue = 133.7,
-  obtainedValue = filter(df.corrected.summary, Direction == "little-thumb")$sd
+reportObject <- compareValues2(
+  reportedValue = "133.7",
+  obtainedValue = filter(df.corrected.summary, Direction == "little-thumb")$sd,
+  valueType = 'sd'
 )
 ```
 
@@ -355,54 +368,64 @@ df.corrected.digits.summary
 Compare explictly:
 
 ```{r}
-compareValues(
-  reportedValue = 440.34,
-  obtainedValue = filter(df.corrected.digits.summary, Number == 1)$m
+reportObject <- compareValues2(
+  reportedValue = "440.34",
+  obtainedValue = filter(df.corrected.digits.summary, Number == 1)$m,
+  valueType = 'mean'
 )
 
-compareValues(
-  reportedValue = 81.19,
-  obtainedValue = filter(df.corrected.digits.summary, Number == 1)$sd
+reportObject <- compareValues2(
+  reportedValue = "81.19",
+  obtainedValue = filter(df.corrected.digits.summary, Number == 1)$sd,
+  valueType = 'sd'
 )
 
-compareValues(
-  reportedValue = 548.16,
-  obtainedValue = filter(df.corrected.digits.summary, Number == 2)$m
+reportObject <- compareValues2(
+  reportedValue = "548.16",
+  obtainedValue = filter(df.corrected.digits.summary, Number == 2)$m,
+  valueType = 'mean'
 )
 
-compareValues(
-  reportedValue = 93.36,
-  obtainedValue = filter(df.corrected.digits.summary, Number == 2)$sd
+reportObject <- compareValues2(
+  reportedValue = "93.36",
+  obtainedValue = filter(df.corrected.digits.summary, Number == 2)$sd,
+  valueType = 'sd'
 )
 
-compareValues(
-  reportedValue = 576.85,
-  obtainedValue = filter(df.corrected.digits.summary, Number == 3)$m
+reportObject <- compareValues2(
+  reportedValue = "576.85",
+  obtainedValue = filter(df.corrected.digits.summary, Number == 3)$m,
+  valueType = 'mean'
 )
 
-compareValues(
-  reportedValue = 79.95,
-  obtainedValue = filter(df.corrected.digits.summary, Number == 3)$sd
+reportObject <- compareValues2(
+  reportedValue = "79.95",
+  obtainedValue = filter(df.corrected.digits.summary, Number == 3)$sd,
+  valueType = 'sd'
 )
 
-compareValues(
-  reportedValue = 584.45,
-  obtainedValue = filter(df.corrected.digits.summary, Number == 4)$m
+reportObject <- compareValues2(
+  reportedValue = "584.45",
+  obtainedValue = filter(df.corrected.digits.summary, Number == 4)$m,
+  valueType = 'mean'
 )
 
-compareValues(
-  reportedValue = 104.2,
-  obtainedValue = filter(df.corrected.digits.summary, Number == 4)$sd
+reportObject <- compareValues2(
+  reportedValue = "104.2",
+  obtainedValue = filter(df.corrected.digits.summary, Number == 4)$sd,
+  valueType = 'sd'
 )
 
-compareValues(
-  reportedValue = 529.27,
-  obtainedValue = filter(df.corrected.digits.summary, Number == 5)$m
+reportObject <- compareValues2(
+  reportedValue = "529.27",
+  obtainedValue = filter(df.corrected.digits.summary, Number == 5)$m,
+  valueType = 'mean'
 )
 
-compareValues(
-  reportedValue = 77.73,
-  obtainedValue = filter(df.corrected.digits.summary, Number ==5)$sd
+reportObject <- compareValues2(
+  reportedValue = "77.73",
+  obtainedValue = filter(df.corrected.digits.summary, Number ==5)$sd,
+  valueType = 'sd'
 )
 ```
 
@@ -417,17 +440,36 @@ We will now try and reproduce the following target outcomes:
 We'll only look at the inferential statistics now (descritives are checked above).
 
 ```{r}
-rs.aov <- aov(rt ~ Posture * Direction + Error(Subject / (Posture * Direction)), data = df.corrected)
+rs.aov <- aov_ez(data = df.corrected, id = "Subject", dv = "rt", within = c("Posture", "Direction"), anova_table = list(correction = "none", es = "pes"), type = 'III')
 
-rs.aov.summary <- summary(rs.aov)
-
-compareValues( # compare F value
-  reportedValue = 32.65,
-  obtainedValue = rs.aov.summary$`Error: Subject:Direction`[[1]]["Direction","F value"]
+reportObject <- compareValues2( # compare df value
+  reportedValue = "1",
+  obtainedValue = rs.aov$anova_table$`num Df`[[2]],
+  valueType = 'df'
+)
+reportObject <- compareValues2( # compare df value
+  reportedValue = "17",
+  obtainedValue = rs.aov$anova_table$`den Df`[[2]],
+  valueType = 'df'
 )
 
-# eyeball p value, is it below .001 as stated?
-rs.aov.summary$`Error: Subject:Direction`[[1]]["Direction","Pr(>F)"]
+reportObject <- compareValues2( # compare F value
+  reportedValue = "32.65",
+  obtainedValue = rs.aov$anova_table$`F`[[2]],
+  valueType = 'F'
+)
+
+reportObject <- compareValues2( # compare p value
+  reportedValue = "eyeballMATCH",
+  obtainedValue = rs.aov$anova_table$`Pr(>F)`[[2]],
+  valueType = 'p'
+)
+
+reportObject <- compareValues2( # compare p value
+  reportedValue = ".66",
+  obtainedValue = rs.aov$anova_table$`pes`[[2]],
+  valueType = 'es'
+)
 ```
 
 All looks fine.
@@ -437,32 +479,97 @@ We will now try and reproduce the following target outcomes:
 > Next, we further explored differences in terms of ordinal position of the digits to be mapped (see Fig. 3 for RTs results as a function of mapping and of Arabic digits). In particular, since we were interested in investigating how numbers were classified depending on their position in the sequence, we performed a one-way ANOVA with Arabic digits as within-subjects variable (One, Two, Three, Four, Five). Results showed a main effect of Arabic digits on RTs, F(4, 68) = 26.23, p < .001, η2p = .61.
 
 ```{r}
-rs.aov.digits <- aov(rt ~ Number + Error(Subject/Number), data=df.corrected)
+rs.aov.digits <- aov_ez(data = df.corrected, dv = "rt", id = "Subject", within = "Number", anova_table = list(correction = "none", es = "pes"), type = 'III')
 
-rs.aov.digits.summary <- summary(rs.aov.digits)
-
-compareValues( # compare F values
-  reportedValue = 26.23,
-  obtainedValue = rs.aov.digits.summary$`Error: Subject:Number`[[1]]["Number","F value"]
+reportObject <- compareValues2( # compare df values
+  reportedValue = "4",
+  obtainedValue = rs.aov.digits$anova_table$`num Df`,
+  valueType = 'df'
 )
 
-# eyeball p value, is it below .001 as stated?
-rs.aov.digits.summary$`Error: Subject:Number`[[1]]["Number","Pr(>F)"]
+reportObject <- compareValues2( # compare df values
+  reportedValue = "68",
+  obtainedValue = rs.aov.digits$anova_table$`den Df`,
+  valueType = 'df'
+)
+ 
+reportObject <- compareValues2( # compare F values
+  reportedValue = "26.23",
+  obtainedValue =  rs.aov.digits$anova_table$`F`,
+  valueType = 'F'
+)
+
+reportObject <- compareValues2( # compare F values
+  reportedValue = ".61",
+  obtainedValue =  rs.aov.digits$anova_table$`pes`,
+  valueType = 'es'
+)
+
+reportObject <- compareValues2( # compare F values
+  reportedValue = "eyeballMATCH",
+  obtainedValue =  rs.aov.digits$anova_table$`Pr(>F)`,
+  valueType = 'p'
+)
 ```
 
 Looks fine.
 
 ## Step 5: Conclusion
 
+We encountered a large number of problems reproducing the values reported for the baseline task. We contacted the authors about this, and they attempted to reproduce the values themselves. They said that they also could not reproduce the values for the baseline task. They were not sure why these problems occurred. However, a data file containing the reaction times (RTs) for the main analysis corrected for baseline was also shared with the article, and the authors say that they are confident these values are correct. Note that the authors cannot reproduce them using the baseline values, but say that the baseline values must be wrong and the RTs for the main analysis were corrected using the correct baseline values. 
+
+We then attempted to reproduce the main analysis using the corrected RTs data file rather than re-calculating these values from scratch using the baseline values as we had initially intended. The main analysis reproduced fine.
+
 ```{r}
-codReport(Report_Type = 'joint',
-          Article_ID = 'RPYAj', 
-          Insufficient_Information_Errors = 0,
-          Decision_Errors = 0, 
-          Major_Numerical_Errors = 9, 
-          Minor_Numerical_Errors = 9,
-          Author_Assistance = T)
+reportObject$Article_ID <- "RPYAj"
+reportObject$affectsConclusion <- "no"
+reportObject$error_typo <- 0
+reportObject$error_specification <- 0
+reportObject$error_analysis <- 0
+reportObject$error_data <- 0
+reportObject$error_unidentified <- 1
+reportObject$Author_Assistance <- T
+reportObject$resolved_typo <- 0
+reportObject$resolved_specification <- 0
+reportObject$resolved_analysis <- 0
+reportObject$resolved_data <- 0
+reportObject$correctionSuggested <- "no"
+reportObject$correctionPublished <- F
+
+# decide on final outcome
+if(reportObject$Decision_Errors > 0 | reportObject$Major_Numerical_Errors > 0 | reportObject$Insufficient_Information_Errors > 0){
+  reportObject$finalOutcome <- "Failure"
+  if(reportObject$Author_Assistance == T){
+    reportObject$finalOutcome <- "Failure despite author assistance"
+  }
+}else{
+  reportObject$finalOutcome <- "Success"
+  if(reportObject$Author_Assistance == T){
+    reportObject$finalOutcome <- "Success with author assistance"
+  }
+}
+
+# save the report object
+filename <- paste0("reportObject_", reportObject$Article_ID,".csv")
+write_csv(reportObject, filename)
 ```
+
+## Report Object
+
+```{r, echo = FALSE}
+# display report object in chunks
+kable(reportObject[2:10], align = 'l')
+kable(reportObject[11:20], align = 'l')
+kable(reportObject[21:25], align = 'l')
+kable(reportObject[26:30], align = 'l')
+kable(reportObject[31:35], align = 'l')
+kable(reportObject[36:40], align = 'l')
+kable(reportObject[41:45], align = 'l')
+kable(reportObject[46:51], align = 'l')
+kable(reportObject[52:57], align = 'l')
+```
+
+## Session information
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()
